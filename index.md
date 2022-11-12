@@ -399,3 +399,253 @@ function ExpenseItem(props) {
 
 export default ExpenseItem;
 ```
+
+### Compositions
+
+We have a composition when a component is called inside of another component (nested components). For example, inside of Expenses we call ExpenseItem, and inside of that we are calling ExpenseDate.
+
+### props.children
+
+This is a special kind of props that is used to display whatever you include between the opening and closing tags when invoking a component inside of another component.
+
+```js
+//Card.js
+import './Card.css';
+
+const Card = (props) => {
+  const classes = 'card ' + props.className;
+  return <div className={classes}>{props.children}</div>;
+};
+
+export default Card;
+
+//ExpenseItem.js
+import ExpenseDate from './ExpenseDate';
+import './ExpenseItem.css';
+import Card from '../UI/Card';
+
+const ExpenseItem = (props) => {
+  return (
+    <Card className="expense-item">
+      <ExpenseDate date={props.date} />
+      <div className="expense-item__description">
+        <h2>{props.title}</h2>
+        <div className="expense-item__price">${props.amount}</div>
+      </div>
+    </Card>
+  );
+};
+
+export default ExpenseItem;
+```
+
+## React State and Working with Events
+
+### Listening to Events
+
+Inside of a JSX parenthesis, we can add special props that begin with 'on', eg, 'onClick'.
+
+```js
+<button
+  onClick={() => {
+    console.log('Clicked');
+  }}
+>
+  Click Me!
+</button>
+```
+
+Defining a named function:
+
+```js
+const ExpenseItem = (props) => {
+  const clickHandler = () => {
+    console.log('Clicked!!!');
+  };
+
+  return (
+    <Card className="expense-item">
+      <ExpenseDate date={props.date} />
+      <div className="expense-item__description">
+        <h2>{props.title}</h2>
+        <div className="expense-item__price">${props.amount}</div>
+      </div>
+      <button onClick={clickHandler}>Click Me</button>
+    </Card>
+  );
+};
+```
+
+### useState
+
+State is used to update data from a component when this component is reloaded due to a click or other event.
+
+```js
+import React, { useState } from 'react';
+
+import ExpenseDate from './ExpenseDate';
+import './ExpenseItem.css';
+import Card from '../UI/Card';
+
+const ExpenseItem = (props) => {
+  const [title, setTitle] = useState(props.title);
+
+  const clickHandler = () => {
+    setTitle('Updated!');
+    console.log('Clicked!!!');
+  };
+
+  return (
+    <Card className="expense-item">
+      <ExpenseDate date={props.date} />
+      <div className="expense-item__description">
+        <h2>{title}</h2>
+        <div className="expense-item__price">${props.amount}</div>
+      </div>
+      <button onClick={clickHandler}>Click Me</button>
+    </Card>
+  );
+};
+
+export default ExpenseItem;
+```
+
+### multiple useState (getting input values from a form)
+
+There are two ways of doing it:
+
+```js
+import React, { useState } from 'react';
+import './ExpenseForm.css';
+
+const ExpenseForm = () => {
+  const [enteredTitle, setEnteredTitle] = useState('');
+  const [enteredAmount, setEnteredAmount] = useState('');
+  const [enteredDate, setEnteredDate] = useState('');
+
+  const titleChangeHandler = (event) => {
+    setEnteredTitle(event.target.value);
+  };
+
+  const amountChangeHandler = (event) => {
+    setEnteredAmount(event.target.value);
+  };
+
+  const dateChangeHandler = (event) => {
+    setEnteredDate(event.target.value);
+  };
+
+  console.log(enteredTitle, enteredAmount, enteredDate);
+
+  return (
+    <form>
+      <div className="new-expense__controls">
+        <div className="new-expense__control">
+          <label>Title</label>
+          <input type="text" onChange={titleChangeHandler} />
+        </div>
+        <div className="new-expense__control">
+          <label>Amount</label>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            onChange={amountChangeHandler}
+          />
+        </div>
+        <div className="new-expense__control">
+          <label>Date</label>
+          <input
+            type="date"
+            min="2019-01-01"
+            max="2022-12-31"
+            onChange={dateChangeHandler}
+          />
+        </div>
+      </div>
+      <div className="new-expense__actions">
+        <button type="submit">Add Expense</button>
+      </div>
+    </form>
+  );
+};
+
+export default ExpenseForm;
+```
+
+Or:
+
+```js
+import React, { useState } from 'react';
+import './ExpenseForm.css';
+
+const ExpenseForm = () => {
+  //   const [enteredTitle, setEnteredTitle] = useState('');
+  //   const [enteredAmount, setEnteredAmount] = useState('');
+  //   const [enteredDate, setEnteredDate] = useState('');
+  const [userInput, setUserInput] = useState({
+    enteredTitle: '',
+    enteredAmount: '',
+    enteredDate: '',
+  });
+
+  const titleChangeHandler = (event) => {
+    setUserInput({
+      ...userInput,
+      enteredTitle: event.target.value,
+    });
+  };
+
+  const amountChangeHandler = (event) => {
+    // setEnteredAmount(event.target.value);
+    setUserInput({
+      ...userInput,
+      enteredAmount: event.target.value,
+    });
+  };
+
+  const dateChangeHandler = (event) => {
+    // setEnteredDate(event.target.value);
+    setUserInput({
+      ...userInput,
+      enteredDate: event.target.value,
+    });
+  };
+
+  console.log(userInput);
+
+  return (
+    <form>
+      <div className="new-expense__controls">
+        <div className="new-expense__control">
+          <label>Title</label>
+          <input type="text" onChange={titleChangeHandler} />
+        </div>
+        <div className="new-expense__control">
+          <label>Amount</label>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            onChange={amountChangeHandler}
+          />
+        </div>
+        <div className="new-expense__control">
+          <label>Date</label>
+          <input
+            type="date"
+            min="2019-01-01"
+            max="2022-12-31"
+            onChange={dateChangeHandler}
+          />
+        </div>
+      </div>
+      <div className="new-expense__actions">
+        <button type="submit">Add Expense</button>
+      </div>
+    </form>
+  );
+};
+
+export default ExpenseForm;
+```
