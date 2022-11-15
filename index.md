@@ -525,6 +525,28 @@ export default function Modal(props) {
 
 ### React Portal
 
+When we want the component to be added somewhere else in the DOM, and not on the original parent component's DOM, we can use the method ReactDOM.createPortal() to set another place on the DOM to place it.
+ReactDOM.cretePortal() accepts 2 arguments:
+A) the first is the HTML/JSX code that will be inserted;
+B) the second is a common DOM element that will receive this piece of code as an append.
+
+```js
+import ReactDOM from 'react-dom';
+import './Modal.css';
+
+export default function Modal(props) {
+  return ReactDOM.createPortal(
+    <div className="modal-backdrop">
+      <div className="modal">
+        {props.children}
+        <button onClick={props.handleClose}>close</button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+```
+
 ---
 
 ## React State and Working with Events
@@ -956,3 +978,151 @@ function App() {
 
 export default App;
 ```
+
+### Styling components (CSS)
+
+NN section#6
+
+#### Global stylesheets
+
+Global stylesheets will style the **index.js** file. This is the js file that creates the **root component** from App.js inside the id root in the DOM (index.html). So all styles formatted here will refer to classes and elements of all React component in that project. **index.css** must be imported only into the **index.js** file.
+
+#### Component stylesheets
+
+These are stylesheets that are specific to a particular component. They have to be imported into that specific component.
+**Take care!** After being compiled, component stylesheets will be added to the html head, so they will also be global. This can cause unpredicted results if we define the same selectors on more than one stylesheet on our project.
+The way to resolve this problem is to add a **root class** inside components. For example, add **modal** class (via className) in our Modal.js component, so that we can then style our h3 without affecting all h3 of the project.
+
+#### Inline styles
+
+Just add a **style** attribute to the JSX/html element. Put one {} to show that it's a JS value, and another {} to open and close a JS object. The CSS properties/values are key/value pairs of that object. The properties' names must be camelCased whenever needed.
+
+```js
+<div className="modal-backdrop">
+  <div
+    className="modal"
+    style={{
+      border: '$px solid',
+      borderColor: '#ff4500',
+      textAlign: 'center',
+    }}
+  >
+    {children}
+    <button onClick={handleClick}>close</button>
+  </div>
+</div>
+```
+
+#### Dynamic inline styles
+
+We can add conditional values to inline styles, by using a ternary operator. Don't forget to pass the prop of the value that will be evaluated during the process (in this case, it's the isSalesModal prop).
+
+```js
+//App.js
+***<Modal handleClose={handleClose} isSalesModal={true}>
+  <h2>Terms and Conditions</h2>
+  <p>
+    Lorem ipsum dolor sit amet consectetur adipisicing elit. Odio sunt quaerat
+    nam, eos ex unde beatae alias voluptates nobis cupiditate? Lorem ipsum dolor
+    sit amet, consectetur adipisicing elit. Sequi, repellat.
+  </p>
+</Modal>
+
+//Modal.js
+export default function Modal({ children, handleClose, ***isSalesModal }) {
+  return ReactDOM.createPortal(
+    <div className="modal-backdrop">
+      <div
+        className="modal"
+        style={{
+          border: '4px solid',
+          ***borderColor: isSalesModal ? '#ff4500' : '#555',
+          textAlign: 'center',
+        }}
+      >
+        {children}
+        <button onClick={handleClose}>close</button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+```
+
+#### Conditional CSS classes
+
+We can also apply conditional classes using ternary operator.
+
+```js
+export default function Modal({ children, handleClose, isSalesModal }) {
+  return ReactDOM.createPortal(
+    <div className="modal-backdrop">
+      <div
+        className="modal"
+        style={{
+          border: '4px solid',
+          borderColor: isSalesModal ? '#ff4500' : '#555',
+          textAlign: 'center',
+        }}
+      >
+        {children}
+        <button
+          onClick={handleClose}
+          className={isSalesModal ? 'sales-btn' : ''}
+        >
+          close
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+//Modal.css
+.modal .sales-btn {
+  border: 4px solid #333;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+```
+
+#### CSS modules
+
+CSS modules will scope the css .class and #id selectors only to the specific js file into which they are imported and used. The element selectors WON'T be scoped when used without any reference to a .class or #id selector.
+There is a special way to import CSS modules into the components:
+
+```js
+//EventList.module.css
+.card {
+  border: 1px;
+  box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.05);
+  padding: 10px;
+  max-width: 400px;
+  margin: 20px auto;
+  border-radius: 4px;
+}
+
+//EventList.js
+import styles from './EventList.module.css';
+
+export default function EventList(props) {
+  return (
+    <div>
+      {props.events.map((event, index) => (
+        <div key={event.id} className={styles.card}>
+          <h2>
+            {index} - {event.title}
+          </h2>
+          <button onClick={() => props.handleClick(event.id)}>
+            delete event
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Forms and Events
+
+NN section#7
