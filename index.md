@@ -322,6 +322,33 @@ The special sintax that's being used in these files is called JSX.
     export default ExpenseItem;
     ```
 
+    ### React fragments
+
+    The HTML elements returned by a React component function must be inside of a single and only root element - for example, a div.
+    Alternatively, the elements can be pu inside an empty HTML tag:
+
+    ```
+    <>
+    other elements
+    </>
+    ```
+
+    This is just the abbreviated form of creating a fragment. Whenever we are passing props through this root element, we have to use the complete form of React.Fragment:
+
+    ````js
+    {showEvents &&
+        events.map((event, index) => (
+          <React.Fragment key={event.id}>
+            <h2>
+              {index} - {event.title}
+            </h2>
+            <button onClick={() => handleClick(event.id)}>delete event</button>
+          </React.Fragment>
+        ))}
+        ```
+
+    ````
+
 ### Props
 
 Props (properties) allow us to reuse the same component, "feeding" with different content.
@@ -439,6 +466,67 @@ const ExpenseItem = (props) => {
 export default ExpenseItem;
 ```
 
+NN
+
+```js
+//App.js
+<Modal>
+  <h2>10% OFF Coupon Code!</h2>
+  <p>Use the code NINJA10 at the checkout.</p>
+</Modal>;
+
+//Modal.js
+export default function Modal(props) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal">{props.children}</div>
+    </div>
+  );
+}
+```
+
+### Functions as props
+
+We can also pass functions as props. This is particularly useful when we want to change the state of a parent component FROM a child component. In this situation, we have to pass the set state function from the parent to the child as a prop, then point to that prop wherever in out child component.
+
+```js
+//App.js
+const [showModal, setShowModal] = useState(true);
+
+const handleClose = () => {
+  setShowModal(false);
+};
+
+{
+  showModal && (
+    <Modal handleClose={handleClose}>
+      <h2>Terms and Conditions</h2>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Odio sunt
+        quaerat nam, eos ex unde beatae alias voluptates nobis cupiditate? Lorem
+        ipsum dolor sit amet, consectetur adipisicing elit. Sequi, repellat.
+      </p>
+    </Modal>
+  );
+}
+
+//Modal.js
+export default function Modal(props) {
+  return (
+    <div className="modal-backdrop">
+      <div className="modal">
+        {props.children}
+        <button onClick={props.handleClose}>close</button>
+      </div>
+    </div>
+  );
+}
+```
+
+### React Portal
+
+---
+
 ## React State and Working with Events
 
 ### Listening to Events
@@ -479,6 +567,33 @@ const ExpenseItem = (props) => {
 ### useState
 
 State is used to update data from a component when this component is reloaded due to a click or other event.
+
+NN
+
+```js
+import './App.css';
+import { useState } from 'react';
+
+function App() {
+  const [name, setName] = useState('mario');
+
+  const handleClick = () => {
+    setName('luigi');
+    console.log(name);
+  };
+
+  return (
+    <div className="App">
+      <h1>My name is {name}</h1>
+      <button onClick={handleClick}>Change name</button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+Max:
 
 ```js
 import React, { useState } from 'react';
@@ -648,4 +763,196 @@ const ExpenseForm = () => {
 };
 
 export default ExpenseForm;
+```
+
+### outputting lists
+
+Whenever outputting a list of items, we must provide each item an unique "key" attribute/prop. This will be useful if later we want to delete or update a particular item.
+
+NN
+
+```js
+import './App.css';
+import { useState } from 'react';
+
+function App() {
+  const [name, setName] = useState('mario');
+  const [events, setEvents] = useState([
+    { title: "mario's birthday bash", id: 1 },
+    { title: "bowser's live stream", id: 2 },
+    { title: 'race on moo moo farm', id: 3 },
+  ]);
+
+  const handleClick = () => {
+    setName('luigi');
+    console.log(name);
+  };
+
+  return (
+    <div className="App">
+      <h1>My name is {name}</h1>
+      <button onClick={handleClick}>Change name</button>
+      {events.map((event, index) => (
+        <div key={event.id}>
+          <h2>
+            {index} - {event.title}
+          </h2>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default App;
+```
+
+### deleting one item on the list
+
+NN
+
+```js
+import './App.css';
+import { useState } from 'react';
+
+function App() {
+  const [events, setEvents] = useState([
+    { title: "mario's birthday bash", id: 1 },
+    { title: "bowser's live stream", id: 2 },
+    { title: 'race on moo moo farm', id: 3 },
+  ]);
+
+  const handleClick = (id) => {
+    setEvents(
+      events.filter((event) => {
+        return id !== event.id;
+        //when returning true, the item will be maintained, when returning false, the item will be omitted.
+      })
+    );
+    console.log(id);
+  };
+
+  return (
+    <div className="App">
+      {events.map((event, index) => (
+        <div key={event.id}>
+          <h2>
+            {index} - {event.title}
+          </h2>
+          <button onClick={() => handleClick(event.id)}>delete event</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default App;
+```
+
+When the current state depends on the previous state's id to be updated, it is good practice to rename the previous state's argument on the callback of the setEvents function.
+
+The previous state is not declared anywhere by us, it is something that React keeps track of states during the render cycles of components and it automatically gives us the previous state snapshot if we decide to go with the functional form of the state updating function where we get this prevState as an argument.
+
+prevEvents is a positional argument, anything you put in that place will refer to the previous state. When you have a state-setting function like setEvents(zorgs), React knows to set your state to whatever value is inside those parentheses, which in this case is 'zorgs'. But when we have an arrow function inside those parenthesis?
+
+setEvents( (zorgs) => { return blah blah blah } )
+
+...React will take whatever the argument of that inner function is to mean "the previous state." So even though you haven't declared "zorgs" anywhere, it doesn't matter because whatever is inside the inner arrow function parenthesis will represent the previous state.
+
+In general it's a good practice to use the functional approach of the state updating function if the new state depends on the previous state. With this approach it's guaranteed by React that you always get the latest state automatically.
+
+Otherwise you might get undesired results since setState is executed asynchronously. So:
+
+```js
+import './App.css';
+import { useState } from 'react';
+
+function App() {
+  const [events, setEvents] = useState([
+    { title: "mario's birthday bash", id: 1 },
+    { title: "bowser's live stream", id: 2 },
+    { title: 'race on moo moo farm', id: 3 },
+  ]);
+
+  const handleClick = (id) => {
+    setEvents((prevEvents) => {
+      return prevEvents.filter((event) => {
+        return id !== event.id;
+      });
+    });
+    console.log(id);
+  };
+
+  return (
+    <div className="App">
+      {events.map((event, index) => (
+        <div key={event.id}>
+          <h2>
+            {index} - {event.title}
+          </h2>
+          <button onClick={() => handleClick(event.id)}>delete event</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Conditional templates
+
+Another use for state in a conponent is to conditionally output parts of the template based on the state.
+
+```js
+import './App.css';
+import { useState } from 'react';
+
+function App() {
+  const [showEvents, setShowEvents] = useState(true);
+  const [events, setEvents] = useState([
+    { title: "mario's birthday bash", id: 1 },
+    { title: "bowser's live stream", id: 2 },
+    { title: 'race on moo moo farm', id: 3 },
+  ]);
+
+  console.log(showEvents);
+
+  const handleClick = (id) => {
+    setEvents((prevEvents) => {
+      return prevEvents.filter((event) => {
+        return id !== event.id;
+      });
+    });
+    console.log(id);
+  };
+
+  return (
+    <div className="App">
+      //only show this button when showEvents is true:
+      {showEvents && (
+        <div>
+          <button onClick={() => setShowEvents(false)}>hide events</button>
+        </div>
+      )}
+      //only show this button when showEvents is false:
+      {!showEvents && (
+        <div>
+          <button onClick={() => setShowEvents(true)}>show events</button>
+        </div>
+      )}
+      //only run this logic when showEvents is true:
+      {showEvents &&
+        events.map((event, index) => (
+          <div key={event.id}>
+            <h2>
+              {index} - {event.title}
+            </h2>
+            <button onClick={() => handleClick(event.id)}>delete event</button>
+          </div>
+        ))}
+    </div>
+  );
+}
+
+export default App;
 ```
