@@ -354,6 +354,10 @@ The special sintax that's being used in these files is called JSX.
 Props (properties) allow us to reuse the same component, "feeding" with different content.
 In App.js, we set "attributes" to the html tags that are being imported from the component .js. Then, in ExpenseItem.js, we should use (props) as a parameter for the ExpenseItem(props) function. "props" is now the name of an object, and the names of the attibutes we defined in App.js are the names of the properties, whose values are the values of these same attributes.
 
+Props can only be passed from parent to child. If we want to pass them from grandparent to grandchild, we must first pass them from grandparent to parent.
+
+To pass data, state, etc. from child to parent (bottom-up), we need to create a function on the parent, pass this function through props to the child, and then call this function wherever is suitable in the child. This is also called **to lift the state up**.
+
 ```js
 ////App.js
 import ExpenseItem from './components/ExpenseItem';
@@ -487,7 +491,7 @@ export default function Modal(props) {
 
 ### Functions as props
 
-We can also pass functions as props. This is particularly useful when we want to change the state of a parent component FROM a child component. In this situation, we have to pass the set state function from the parent to the child as a prop, then point to that prop wherever in out child component.
+We can also pass functions as props. This is particularly useful when we want to change the state of a parent component FROM a child component, or to pass data from child to perent (see max58). In this situation, we have to pass the set state function from the parent to the child as a prop, then point to that prop wherever in out child component.
 
 ```js
 //App.js
@@ -553,7 +557,7 @@ export default function Modal(props) {
 
 ### Listening to Events
 
-Inside of a JSX parenthesis, we can add special props that begin with 'on', eg, 'onClick'.
+Inside of a JSX parenthesis, we can add special attributes that begin with 'on', eg, 'onClick'.
 
 ```js
 <button
@@ -1086,6 +1090,20 @@ export default function Modal({ children, handleClose, isSalesModal }) {
 }
 ```
 
+One more example by Max (#75). Here, we use backticks to inject one more class, conditionally:
+
+```js
+return (
+  <form onSubmit={formSubmitHandler}>
+    <div className={`form-control ${!isValid ? 'invalid' : ''}`}>
+      <label>Course Goal</label>
+      <input type="text" onChange={goalInputChangeHandler} />
+    </div>
+    <Button type="submit">Add Goal</Button>
+  </form>
+);
+```
+
 #### CSS modules
 
 CSS modules will scope the css .class and #id selectors only to the specific js file into which they are imported and used. The element selectors WON'T be scoped when used without any reference to a .class or #id selector.
@@ -1123,6 +1141,882 @@ export default function EventList(props) {
 }
 ```
 
+### Styled components
+
+**styled-components** is a package that creates React components which receive styles in a more direct syntax.
+Installation: `npm install --save styled-components`
+
+This example shows that, by using styled-components, there is no need to pass props anymore, because styled-components will track them all for us.
+
+```js
+////Button.js
+// import React from 'react';
+// import './Button.css';
+import styled from 'styled-components';
+
+const Button = styled.button`
+  font: inherit;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid #8b005d;
+  color: white;
+  background: #8b005d;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.26);
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:hover,
+  &:active {
+    background: #ac0e77;
+    border-color: #ac0e77;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.26);
+  }
+`;
+
+// const Button = props => {
+//   return (
+//     <button type={props.type} className="button" onClick={props.onClick}>
+//       {props.children}
+//     </button>
+//   );
+// };
+
+export default Button;
+
+////
+```
+
+#### Adding dynamic classes inside a styled-component
+
+Here we are creating a styled-component inside the same file that will call this component. We are also dynamically setting the 'invalid' class to it.
+
+```js
+import React, { useState } from 'react';
+
+import Button from '../../UI/Button/Button';
+import './CourseInput.css';
+
+import styled from 'styled-components';
+
+const FormControl = styled.div`
+  margin: 0.5rem 0;
+
+  & label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  & input {
+    display: block;
+    width: 100%;
+    border: 1px solid #ccc;
+    font: inherit;
+    line-height: 1.5rem;
+    padding: 0 0.25rem;
+  }
+
+  & input:focus {
+    outline: none;
+    background: #fad0ec;
+    border-color: #8b005d;
+  }
+
+  &.invalid input {
+    border-color: red;
+    background: #ffd7d7;
+  }
+
+  &.invalid label {
+    color: red;
+  }
+`;
+
+const CourseInput = (props) => {
+  const [enteredValue, setEnteredValue] = useState('');
+  const [isValid, setIsValid] = useState(true);
+
+  const goalInputChangeHandler = (event) => {
+    if (event.target.value.trim().length > 0) {
+      setIsValid(true);
+    }
+    setEnteredValue(event.target.value);
+  };
+
+  const formSubmitHandler = (event) => {
+    event.preventDefault();
+    if (enteredValue.trim().length === 0) {
+      setIsValid(false);
+      return;
+    }
+    props.onAddGoal(enteredValue);
+  };
+
+  return (
+    <form onSubmit={formSubmitHandler}>
+      <FormControl className={!isValid && 'invalid'}>
+        <label>Course Goal</label>
+        <input type="text" onChange={goalInputChangeHandler} />
+      </FormControl>
+      <Button type="submit">Add Goal</Button>
+    </form>
+  );
+};
+
+export default CourseInput;
+```
+
+Another way of dynamically changing styles with styled-components is to pass a prop (in this case, 'invalid') and then, in the styles, pass a function:
+
+```js
+import React, { useState } from 'react';
+
+import Button from '../../UI/Button/Button';
+import './CourseInput.css';
+
+import styled from 'styled-components';
+
+const FormControl = styled.div`
+  margin: 0.5rem 0;
+
+  & label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.5rem;
+    ***color: ${(props) => (props.invalid ? 'red' : 'black')}
+  }
+
+  & input {
+    display: block;
+    width: 100%;
+    ***border: 1px solid ${(props) => (props.invalid ? 'red' : '#ccc')};
+    ***background: ${(props) => (props.invalid ? '#ffd7d7' : 'transparent')}
+    font: inherit;
+    line-height: 1.5rem;
+    padding: 0 0.25rem;
+  }
+
+  & input:focus {
+    outline: none;
+    background: #fad0ec;
+    border-color: #8b005d;
+  }
+`;
+
+const CourseInput = (props) => {
+  const [enteredValue, setEnteredValue] = useState('');
+  const [isValid, setIsValid] = useState(true);
+
+  const goalInputChangeHandler = (event) => {
+    if (event.target.value.trim().length > 0) {
+      setIsValid(true);
+    }
+    setEnteredValue(event.target.value);
+  };
+
+  const formSubmitHandler = (event) => {
+    event.preventDefault();
+    if (enteredValue.trim().length === 0) {
+      setIsValid(false);
+      return;
+    }
+    props.onAddGoal(enteredValue);
+  };
+
+  return (
+    <form onSubmit={formSubmitHandler}>
+      ***
+      <FormControl invalid={!isValid}>
+        <label>Course Goal</label>
+        <input type="text" onChange={goalInputChangeHandler} />
+      </FormControl>
+      <Button type="submit">Add Goal</Button>
+    </form>
+  );
+};
+
+export default CourseInput;
+```
+
+#### Styled-components and media queries
+
+It's pretty easy to add media queries when using styled-components:
+
+```js
+//Button.js
+import styled from 'styled-components';
+
+const Button = styled.button`
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid #8b005d;
+  color: white;
+  background: #8b005d;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.26);
+  cursor: pointer;
+
+  @media (min-width: 768px) {
+    width: auto;
+    color: 'green';
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:hover,
+  &:active {
+    background: #ac0e77;
+    border-color: #ac0e77;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.26);
+  }
+`;
+
+export default Button;
+```
+
+This will set the button's width to auto and the button color to green when the screen width is below 768px.
+
 ## Forms and Events
 
 NN section#7
+
+### The onChange event
+
+**onChange** event should be added into the input element. This event's value will be an anonymous function with the (e) object as an argument, the function sets the state of title and date by using setTitle and setDate. Remember to define states for title and date to store the input values.
+
+```js
+import { useState } from 'react';
+import './NewEventForm.css';
+
+export default function NewEventForm() {
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+
+  return (
+    <form className="new-event-form">
+      <label>
+        <span>Event Title:</span>
+        <input type="text" onChange={(e) => setTitle(e.target.value)} />
+      </label>
+      <label>
+        <span>Event Date:</span>
+        <input type="date" onChange={(e) => setDate(e.target.value)} />
+      </label>
+      <button>Submit</button>
+      <p>
+        title: {title}, date: {date}
+      </p>
+    </form>
+  );
+}
+```
+
+### Controlled inputs
+
+When we control an input value from outside of it, this is a controlled input. For example, when we reset an input to empty using a setState function, we are controlling it.
+
+In this example, the resetForm function resets the states of title and date, and the input value is also reset to empty.
+
+This is also called **two way binding**. See MAX lecture#57.
+
+```js
+export default function NewEventForm() {
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+
+  const resetForm = () => {
+    setTitle('');
+    setDate('');
+  };
+
+  return (
+    <form className="new-event-form">
+      <label>
+        <span>Event Title:</span>
+        <input
+          type="text"
+          onChange={(e) => setTitle(e.target.value)}
+          value={title}
+        />
+      </label>
+      <label>
+        <span>Event Date:</span>
+        <input
+          type="date"
+          onChange={(e) => setDate(e.target.value)}
+          value={date}
+        />
+      </label>
+      <button>Submit</button>
+      <p>
+        title: {title}, date: {date}
+      </p>
+      <p onClick={resetForm}>reset the form</p>
+    </form>
+  );
+}
+```
+
+### Submitting forms (onSubmit event)
+
+The **onSubmit** event must be added into the **form** element, not into the **submit** element.
+Don't forget to call e.preventDefault() in the handleSubmit function to prevent the browser's default behavior to form submission.
+
+```js
+export default function NewEventForm() {
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+
+  const resetForm = () => {
+    setTitle('');
+    setDate('');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const event = {
+      title: title,
+      date: date,
+      id: Math.floor(Math.random() * 10000),
+    };
+    console.log(event);
+    resetForm();
+  };
+
+  return (
+    <form className="new-event-form" onSubmit={handleSubmit}>
+      <label>
+        <span>Event Title:</span>
+        <input
+          type="text"
+          onChange={(e) => setTitle(e.target.value)}
+          value={title}
+        />
+      </label>
+      <label>
+        <span>Event Date:</span>
+        <input
+          type="date"
+          onChange={(e) => setDate(e.target.value)}
+          value={date}
+        />
+      </label>
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
+### Adding events to the Events List
+
+To add events to the events array in the App.js file, we first have to make the handleSubmit function create a **event** object. Then, in the App.js we create a function called **addEvent**, then include this function as a prop of the NewEventForm component. Then we can call the addEvent function inside NewEventForm.js.
+
+```js
+//App.js
+function App() {
+  const [showModal, setShowModal] = useState(false);
+  const [showEvents, setShowEvents] = useState(true);
+  const [events, setEvents] = useState([
+    { title: "mario's birthday bash", id: 1 },
+    { title: "bowser's live stream", id: 2 },
+    { title: 'race on moo moo farm', id: 3 },
+  ]);
+
+  const addEvent = (event) => {
+    setEvents((prevEvents) => {
+      return [...prevEvents, event];
+    });
+    setShowModal(false);
+  };
+
+  const handleClick = (id) => {
+    setEvents((prevEvents) => {
+      return prevEvents.filter((event) => {
+        return id !== event.id;
+      });
+    });
+    console.log(id);
+  };
+
+  const subtitle = 'All the latest events in Marioland';
+
+  return (
+    <div className="App">
+      <Title title="Events in Your Area" subtitle={subtitle} />
+
+      {showEvents && (
+        <div>
+          <button onClick={() => setShowEvents(false)}>hide events</button>
+        </div>
+      )}
+      {!showEvents && (
+        <div>
+          <button onClick={() => setShowEvents(true)}>show events</button>
+        </div>
+      )}
+      {showEvents && <EventList events={events} handleClick={handleClick} />}
+
+      {showModal && (
+        <Modal isSalesModal={true}>
+          <NewEventForm addEvent={addEvent} />
+        </Modal>
+      )}
+
+      <br />
+      <div>
+        <button onClick={() => setShowModal(true)}>Add New Event</button>
+      </div>
+    </div>
+  );
+}
+
+//NewEventForm.js
+export default function NewEventForm({ addEvent }) {
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+
+  const resetForm = () => {
+    setTitle('');
+    setDate('');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const event = {
+      title: title,
+      date: date,
+      id: Math.floor(Math.random() * 10000),
+    };
+    console.log(event);
+    addEvent(event);
+    resetForm();
+  };
+
+  return (
+    <form className="new-event-form" onSubmit={handleSubmit}>
+      <label>
+        <span>Event Title:</span>
+        <input
+          type="text"
+          onChange={(e) => setTitle(e.target.value)}
+          value={title}
+        />
+      </label>
+      <label>
+        <span>Event Date:</span>
+        <input
+          type="date"
+          onChange={(e) => setDate(e.target.value)}
+          value={date}
+        />
+      </label>
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
+### useRef hook
+
+**useRef** is a hook that is pretty similar to useState, but has some differences.
+When we call `const ourRef = useRef(0);`, ourRef's value will be an **object**. This object has a property called **current**, that stores the current value of ourRef.
+
+Every element in the DOM has an attribute called ref which we can set our ref to.
+
+When the reference value is changed, it is updated without the need to refresh or re-render. However in useState, the component must render again to update the state or its value.
+
+Refs are useful when getting user input, DOM element properties and storing constantly updating values. However, if you are storing component related info or use methods in components states are the best option. Let's now "translate" our form input using useRef:
+
+```js
+import { useRef } from 'react';
+import './NewEventForm.css';
+
+export default function NewEventForm({ addEvent }) {
+  const title = useRef();
+  const date = useRef();
+
+  const resetForm = () => {
+    title.current.value = '';
+    date.current.value = '';
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const event = {
+      title: title.current.value,
+      date: date.current.value,
+      id: Math.floor(Math.random() * 10000),
+    };
+    addEvent(event);
+    resetForm();
+  };
+
+  return (
+    <form className="new-event-form" onSubmit={handleSubmit}>
+      <label>
+        <span>Event Title:</span>
+        <input type="text" ref={title} />
+      </label>
+      <label>
+        <span>Event Date:</span>
+        <input type="date" ref={date} />
+      </label>
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
+## Fetching data & useEffect
+
+NN section#8
+
+### useEffect
+
+When fetching data from an API, we must use the useEffect hook, so that the data will run just once - ie, when the page is loaded.
+
+The useEffect hook takes two arguments, the first is a callback function, the second is what we call **dependency array**. This array can be empty.
+
+```js
+import { useState, useEffect } from 'react';
+import './TripList.css';
+
+export default function TripList() {
+  const [trips, setTrips] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:3000/trips')
+      .then((response) => response.json())
+      .then((json) => setTrips(json));
+  }, []);
+
+  console.log(trips);
+
+  return (
+    <div className="trip-list">
+      <h2>TripList</h2>
+      <ul>
+        {trips.map((trip, index) => (
+          <li key={trip.id}>
+            <h3>{trip.title}</h3>
+            <p>{trip.price}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### The useEffect dependency array
+
+Each time that the values on the dependencies array change, the component will be re-rendered. If the dependencies array is empty, then the component will be loaded just once.
+
+```js
+export default function TripList() {
+  const [trips, setTrips] = useState([]);
+  const [url, setUrl] = useState('http://localhost:3000/trips');
+
+  const fetchTrips = async () => {
+    const response = await fetch(url);
+    const json = await response.json();
+    setTrips(json);
+  };
+
+  useEffect(() => {
+    fetch(url)
+      .then((response) => response.json())
+      .then((json) => setTrips(json));
+  }, [url]);
+
+  console.log(trips);
+
+  return (
+    <div className="trip-list">
+      <h2>TripList</h2>
+      <ul>
+        {trips.map((trip, index) => (
+          <li key={trip.id}>
+            <h3>{trip.title}</h3>
+            <p>{trip.price}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="filters">
+        <button
+          onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
+        >
+          European Trips
+        </button>
+        <button onClick={() => setUrl('http://localhost:3000/trips')}>
+          All Trips
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### useCallback for Function Dependencies
+
+Whenever one of our useEffect dependencies is a function, we must use useCallback, so that useEffect doesn't create an infinite loop as it runs.
+
+```js
+import { useState, useEffect, useCallback } from 'react';
+import './TripList.css';
+
+export default function TripList() {
+  const [trips, setTrips] = useState([]);
+  const [url, setUrl] = useState('http://localhost:3000/trips');
+
+  const fetchTrips = useCallback(async () => {
+    const response = await fetch(url);
+    const json = await response.json();
+    setTrips(json);
+  }, [url]);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
+
+  console.log(trips);
+
+  return (
+    <div className="trip-list">
+      <h2>TripList</h2>
+      <ul>
+        {trips.map((trip, index) => (
+          <li key={trip.id}>
+            <h3>{trip.title}</h3>
+            <p>{trip.price}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="filters">
+        <button
+          onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
+        >
+          European Trips
+        </button>
+        <button onClick={() => setUrl('http://localhost:3000/trips')}>
+          All Trips
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Creating a custom React Hook
+
+We can create a custom hook to fetch data from the API, so that everytime we need to fetch data, we don't need to repeat the same code again.
+
+Usually, custom hooks can be stored in separated JS files in a separated folder called 'hooks'.
+
+```js
+// hooks/useFetch.js
+import { useState, useEffect } from 'react';
+
+export const useFetch = (url) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch(url);
+      const json = await res.json();
+      setData(json);
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data: data };
+};
+
+// components/TripList.js
+import { useState, useEffect } from 'react';
+
+export const useFetch = (url) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch(url);
+      const json = await res.json();
+      setData(json);
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data: data };
+};
+```
+
+### Adding a loading/pending state
+
+Just review.
+We can add a new isPending state into our useFetch hook. Then return the state off the hook and use it inside our TripList component.
+
+```js
+//hooks/useFetch.js
+import { useState, useEffect } from 'react';
+
+export const useFetch = (url) => {
+  const [data, setData] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsPending(true);
+
+      const res = await fetch(url);
+      const json = await res.json();
+
+      setIsPending(false);
+      setData(json);
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data, isPending };
+};
+
+//components/TripList.js
+export default function TripList() {
+  const [url, setUrl] = useState('http://localhost:3000/trips');
+  const { data: trips, isPending } = useFetch(url);
+
+  return (
+    <div className="trip-list">
+      <h2>TripList</h2>
+      {isPending && <div>Loading trips...</div>}
+      <ul>
+        {trips &&
+          trips.map((trip, index) => (
+            <li key={trip.id}>
+              <h3>{trip.title}</h3>
+              <p>{trip.price}</p>
+            </li>
+          ))}
+      </ul>
+      <div className="filters">
+        <button
+          onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
+        >
+          European Trips
+        </button>
+        <button onClick={() => setUrl('http://localhost:3000/trips')}>
+          All Trips
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Handling errors!
+
+NN lecture#54
+In order to handle errors, we must define a state on useFetch called error, setError.
+Then we add a try/catch block to catch errors in the fetching process. Because the will always be a response, even if it's an error message, we can add a **guard clause** to create a new Error(), that will be catched.
+
+```js
+// hooks/useFetch.js
+import { useState, useEffect } from 'react';
+
+export const useFetch = (url) => {
+  const [data, setData] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsPending(true);
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        const json = await res.json();
+
+        setIsPending(false);
+        setData(json);
+        setError(null);
+      } catch (err) {
+        setIsPending(false);
+        setError('Could not fetch the data');
+        console.log(err.message);
+      }
+    };
+
+    fetchData();
+  }, [url]);
+
+  return { data, isPending, error };
+};
+
+// components/TripList.js
+import { useState } from 'react';
+import { useFetch } from '../hooks/useFetch';
+import './TripList.css';
+
+export default function TripList() {
+  const [url, setUrl] = useState('http://localhost:3000/trips');
+  const { data: trips, isPending, error } = useFetch(url);
+
+  return (
+    <div className="trip-list">
+      <h2>TripList</h2>
+      {isPending && <div>Loading trips...</div>}
+      {error && <div>{error}</div>}
+      <ul>
+        {trips &&
+          trips.map((trip, index) => (
+            <li key={trip.id}>
+              <h3>{trip.title}</h3>
+              <p>{trip.price}</p>
+            </li>
+          ))}
+      </ul>
+      <div className="filters">
+        <button
+          onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
+        >
+          European Trips
+        </button>
+        <button onClick={() => setUrl('http://localhost:3000/trips')}>
+          All Trips
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Clean-up function (aborting fetch requests)
+
+1. Create a new AbortController() inside of the useEffect callback function
+   `const controller = new AbortController()`
+2. The fetch method accepts two arguments: a url string and an object of options. Inside that object, we pass a signal property
+   `const res = await fetch(url, { signal: controller.signal })`
+   This associates the fetch request with the AbortController.
+3. At the final of the callback function of the useEffect, return an abort()
+   `return () => { controller.abort() }`
+4. This will throw an error, that can be catched inside of the catch block
+   `if (err.name === 'AbortError') {
+   console.log('the fetch was aborted);
+   }
+
+## Fragments, Portals & Refs
+
+Max section#9
