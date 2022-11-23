@@ -3,6 +3,7 @@
 ## 0: Markdown
 
 - **preview**: shift + command + v
+- **same page links**: [here](#place-2)
 
 ## 1: Settings
 
@@ -325,6 +326,7 @@ The special sintax that's being used in these files is called JSX.
     ### React fragments
 
     The HTML elements returned by a React component function must be inside of a single and only root element - for example, a div.
+    See Max's examples and under the hood explanation [here](#wrapper-component)
     Alternatively, the elements can be pu inside an empty HTML tag:
 
     ```
@@ -529,7 +531,11 @@ export default function Modal(props) {
 
 ### React Portal
 
+More examples and usage details [here](#react-portals).
 When we want the component to be added somewhere else in the DOM, and not on the original parent component's DOM, we can use the method ReactDOM.createPortal() to set another place on the DOM to place it.
+
+This is specially useful, for example, when adding a Modal on the page, as modal should be placed right under the beginning of the body element on DOM, or on the end of the body element - and not inside other element. Semantically, it will make more sense.
+
 ReactDOM.cretePortal() accepts 2 arguments:
 A) the first is the HTML/JSX code that will be inserted;
 B) the second is a common DOM element that will receive this piece of code as an append.
@@ -2020,3 +2026,473 @@ export default function TripList() {
 ## Fragments, Portals & Refs
 
 Max section#9
+
+### Wrapper component
+
+As we know, it's not allowed to return more than one element inside of a JSX component function.
+In order to avoid having to nest JSX content inside of a div, we can create a Wrapper component that just returns **props.children**.
+Typically, we don't need to create a Wrapper component. This is just to explain how the **<React.Fragment>** element work under the hood.
+
+```js
+// components/Helpers/Wrapper.js
+// (there is no need to import React, because we are not using JSX in here!)
+const Wrapper = (props) => {
+  return props.children;
+};
+
+export default Wrapper;
+
+//components/Users/AddUser.js
+return (
+  <Wrapper>
+    {error && (
+      <ErrorModal
+        onConfirm={errorHandler}
+        title={error.title}
+        message={error.message}
+      />
+    )}
+    <Card className={classes.input}>
+      <form onSubmit={addUserHandler}>
+        <label htmlFor="username">Username</label>
+        <input
+          id="username"
+          type="text"
+          onChange={usernameChangeHandler}
+          value={enteredUsername}
+        />
+        <label htmlFor="age">Age</label>
+        <input
+          id="age"
+          type="number"
+          onChange={ageChangeHandler}
+          value={enteredAge}
+        />
+        <Button type="submit">Add User</Button>
+      </form>
+    </Card>
+  </Wrapper>
+);
+```
+
+### React Portals
+
+Specially useful for customizing the exact place on the DOM structure where we want to put components or parts of components. Eg: modals, sidebars, navbars, etc.
+
+```js
+// public/index.html
+    <div id="backdrop-root"></div>
+    <div id="overlay-root"></div>
+    <div id="root"></div>
+
+// components/UI/ErrorModal.js
+import React from 'react';
+import Card from './Card';
+import Button from './Button';
+import classes from './ErrorModal.module.css';
+import ReactDOM from 'react-dom';
+
+const Backdrop = (props) => {
+  return <div className={classes.backdrop} onClick={props.onConfirm} />;
+};
+
+const ModalOverlay = (props) => {
+  return (
+    <Card className={classes.modal}>
+      <header className={classes.header}>
+        <h2>{props.title}</h2>
+      </header>
+      <div className={classes.content}>
+        <p>{props.message}</p>
+      </div>
+      <footer className={classes.actions}>
+        <Button onClick={props.onConfirm}>Okay</Button>
+      </footer>
+    </Card>
+  );
+};
+
+const ErrorModal = (props) => {
+  return (
+    <React.Fragment>
+      {ReactDOM.createPortal(
+        <Backdrop onConfirm={props.onConfirm} />,
+        document.getElementById('backdrop-root')
+      )}
+      {ReactDOM.createPortal(
+        <ModalOverlay
+          title={props.title}
+          message={props.message}
+          onConfirm={props.onConfirm}
+        />,
+        document.getElementById('overlay-root')
+      )}
+    </React.Fragment>
+  );
+};
+
+export default ErrorModal;
+```
+
+## useEffects, Reduce & ContextAPI
+
+### What are side effects?
+
+Max section 10
+Up to now, we learned that React's main task are to render the UI and re-render its components whenever the states or props change.
+
+Anything that is out of this scope, we should call **side-effects**. For example, store data in browser storage, sending http requests, set and manage timers, etc.
+
+These tasks must happen outside of the normal component evaluation and render cycle - especially since they might block/delay rendering.
+
+### useEffect
+
+#### useEffect behaviors:
+
+**1)** useEffect hook without mentioning any dependency array like.. useEffect(someCallbackFuction); runs for every render of the functional component in which its included.. (useless)
+**2)** useEffect hook with an **empty dependency array** like this.. useEffect(callbackFunc , [] ) is executed only for the the initial render of the the functional component. And then it will not run in the further renders of the same functional Component..
+**3)** useEffect hook with **some dependencies** inside the dependency array like this.. useEffect(callbackFunc , [ dependency ] ); will run for the initial render as well as when the render happen due to change in dependencies mentioned in the dependency array...
+
+#### Case 2) Empty dependency array
+
+_Max lecture 113, repo/react-max-section10_
+
+Here, once the user logs in, we set an item in localStorage. Then, the next time the user renders the app, the isLoggedIn state changes to true, without causing infinite loops. If no useEffect was used, once the localStorage is read, the state would change and the component would render again, causing infinite loop.
+
+```js
+//App.js
+import React, { useState, useEffect } from 'react';
+
+import Login from './components/Login/Login';
+import Home from './components/Home/Home';
+import MainHeader from './components/MainHeader/MainHeader';
+
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const storedUserLoggedInInformation = localStorage.getItem('isLoggedIn');
+
+    if (storedUserLoggedInInformation === '1') {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const loginHandler = (email, password) => {
+    localStorage.setItem('isLoggedIn', '1');
+    setIsLoggedIn(true);
+  };
+
+  const logoutHandler = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
+  };
+
+  return (
+    <React.Fragment>
+      <MainHeader isAuthenticated={isLoggedIn} onLogout={logoutHandler} />
+      <main>
+        {!isLoggedIn && <Login onLogin={loginHandler} />}
+        {isLoggedIn && <Home onLogout={logoutHandler} />}
+      </main>
+    </React.Fragment>
+  );
+}
+
+export default App;
+```
+
+#### Case 3) useEffect with dependencies (and clean up function)
+
+_Max lecture 113, repo/react-max-section10_
+
+Here, every time the input changes, enteredEmail and enteredPassword will change, so the useEffect will be called.
+
+To avoid calling it at every key-press, a Timeout was set, so that the function will wait 500ms to be called. Everytime the user presses a key before the 500ms has passed, the clean-up function will execute, cleaning the anterior Timeout. The current Timeout, however, will continue to run, and if the user stops typing for more than 500ms, then the current useEffect callback function will run.
+
+`Clean up function runs AFTER the new render but BEFORE the 'new' effects are applied.`
+
+So in essence, the previous effect is cleaned up first before executing the next effect. This is mainly done for performance optimization so that the rendering process does not suffer any delay.
+
+```js
+//Login.js
+import React, { useState, useEffect } from 'react';
+
+import Card from '../UI/Card/Card';
+import classes from './Login.module.css';
+import Button from '../UI/Button/Button';
+
+const Login = (props) => {
+  const [enteredEmail, setEnteredEmail] = useState('');
+  const [emailIsValid, setEmailIsValid] = useState();
+  const [enteredPassword, setEnteredPassword] = useState('');
+  const [passwordIsValid, setPasswordIsValid] = useState();
+  const [formIsValid, setFormIsValid] = useState(false);
+
+  useEffect(() => {
+    const identifier = setTimeout(() => {
+      console.log('Checking form validity!');
+      setFormIsValid(
+        enteredEmail.includes('@') && enteredPassword.trim().length > 6
+      );
+    }, 500);
+
+    return () => {
+      console.log('CLEANUP');
+      clearTimeout(identifier);
+    };
+  }, [enteredEmail, enteredPassword]);
+
+  const emailChangeHandler = (event) => {
+    setEnteredEmail(event.target.value);
+  };
+
+  const passwordChangeHandler = (event) => {
+    setEnteredPassword(event.target.value);
+
+    setFormIsValid(
+      event.target.value.trim().length > 6 && enteredEmail.includes('@')
+    );
+  };
+
+  const validateEmailHandler = () => {
+    setEmailIsValid(enteredEmail.includes('@'));
+  };
+
+  const validatePasswordHandler = () => {
+    setPasswordIsValid(enteredPassword.trim().length > 6);
+  };
+
+  const submitHandler = (event) => {
+    event.preventDefault();
+    props.onLogin(enteredEmail, enteredPassword);
+  };
+
+  return (
+    <Card className={classes.login}>
+      <form onSubmit={submitHandler}>
+        <div
+          className={`${classes.control} ${
+            emailIsValid === false ? classes.invalid : ''
+          }`}
+        >
+          <label htmlFor="email">E-Mail</label>
+          <input
+            type="email"
+            id="email"
+            value={enteredEmail}
+            onChange={emailChangeHandler}
+            onBlur={validateEmailHandler}
+          />
+        </div>
+        <div
+          className={`${classes.control} ${
+            passwordIsValid === false ? classes.invalid : ''
+          }`}
+        >
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            value={enteredPassword}
+            onChange={passwordChangeHandler}
+            onBlur={validatePasswordHandler}
+          />
+        </div>
+        <div className={classes.actions}>
+          <Button type="submit" className={classes.btn} disabled={!formIsValid}>
+            Login
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+};
+
+export default Login;
+```
+
+### useReducer
+
+Sometimes, you have ++more complex state++ - for example if you got ++multiple states++, ++multiple ways of changing it++ or ++dependencies++ to other states.
+
+useState() then often becomes hard or error-prone to use - it's easy to write bad or buggy code in such scenarios.
+
+**useReducer()** can be used as a replacement for useState() if you need more powerful state management.
+**COMPLETAR**
+
+## React Route
+
+Whenever we want to selectively output a component when clicking a link, instead of using anchor tags, we will use **Link** and **NavLink** components.
+The paths of these Links and NavLinks must be surrounded by a **Router** component on the root file. The Router component must be surrounded by a **Switch** component to tell React to open one of those components selectively. The **exact** prop/attribute must be used to ensure the "/" path doesn't conflict with other paths that begin with "/".
+The difference between Link and NavLink is that, using NavLink, it automatically adds classes like .active on our links, these classes can be easily manipulated through CSS.
+
+```js
+npm i react-route-dom
+
+//App.js
+import './App.css';
+import { BrowserRouter, Route, Switch, Link, NavLink } from 'react-router-dom';
+
+//page components:
+import Home from './pages/Home';
+import Contact from './pages/Contact';
+import About from './pages/About';
+
+function App() {
+  return (
+    <div className="App">
+      <BrowserRouter>
+        <nav>
+          <h1>My Articles</h1>
+          <NavLink exact to="/">
+            Home
+          </NavLink>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/contact">Contact</NavLink>
+        </nav>
+
+        <Switch>
+          <Route exact path="/">
+            <Home />
+          </Route>
+          <Route path="/about">
+            <About />
+          </Route>
+          <Route path="/contact">
+            <Contact />
+          </Route>
+        </Switch>
+      </BrowserRouter>
+    </div>
+  );
+}
+
+export default App;
+
+//App.css
+.App {
+  max-width: 960px;
+  margin: 0 auto;
+}
+nav {
+  display: flex;
+  margin: 0 auto 60px;
+  gap: 10px;
+  align-items: center;
+}
+nav h1 {
+  margin-right: auto;
+}
+nav a {
+  color: #333;
+  padding: 4px 10px;
+}
+nav a.active {
+  color: white;
+  background: #333;
+  text-decoration: none;
+}
+```
+
+### Fetching data from a database
+
+To fetch data from a database, we will be using the useFetch() custom hook that we already made. We just have to import it and, inside the function, deconstruct the variables { data, isPending, error }.
+Now we can output the titles and authors of the articles in a list on Home.js:
+
+```js
+import { useFetch } from '../hooks/useFetch';
+import './Home.css';
+
+export default function Home() {
+  const {
+    data: articles,
+    isPending,
+    error,
+  } = useFetch('http://localhost:3000/articles');
+
+  return (
+    <div className="home">
+      <h2>Articles</h2>
+      {isPending && <div>Loadind...</div>}
+      {error && <div>{error}</div>}
+      {articles &&
+        articles.map((article) => (
+          <div key={article.id} className="card">
+            <h3>{article.title}</h3>
+            <p>{article.author}</p>
+          </div>
+        ))}
+    </div>
+  );
+}
+```
+
+### Route parameters
+
+We can add parameters to a "to" prop on the Link component element on Home.js. This parameter can be dynamic:
+
+```js
+import { useFetch } from '../hooks/useFetch';
+import './Home.css';
+import { Link } from 'react-route-dom'
+
+export default function Home() {
+  const {
+    data: articles,
+    isPending,
+    error,
+  } = useFetch('http://localhost:3000/articles');
+
+  return (
+    <div className="home">
+      <h2>Articles</h2>
+      {isPending && <div>Loadind...</div>}
+      {error && <div>{error}</div>}
+      {articles &&
+        articles.map((article) => (
+          <div key={article.id} className="card">
+            <h3>{article.title}</h3>
+            <p>{article.author}</p>
+            <Link to={`/articles/${article.id}`}>
+          </div>
+        ))}
+    </div>
+  );
+}
+
+//We also need to add this Link path's to the Router on App.js. HERE is the place to use :id, where ":" indicates that it is a mutable parameter:
+function App() {
+  return (
+    <div className="App">
+      <BrowserRouter>
+        <nav>
+          <h1>My Articles</h1>
+          <NavLink exact to="/">
+            Home
+          </NavLink>
+          <NavLink to="/about">About</NavLink>
+          <NavLink to="/contact">Contact</NavLink>
+        </nav>
+
+        <Switch>
+          <Route exact path="/">
+            <Home />
+          </Route>
+          <Route path="/about">
+            <About />
+          </Route>
+          <Route path="/contact">
+            <Contact />
+          </Route>
+          <Route path="/articles/:id">
+            <Article />
+          </Route>
+        </Switch>
+      </BrowserRouter>
+    </div>
+  );
+}
+```
+
+### useParams hook
