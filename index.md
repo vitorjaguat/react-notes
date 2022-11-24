@@ -2323,6 +2323,8 @@ useState() then often becomes hard or error-prone to use - it's easy to write ba
 
 ## React Route
 
+Working on react-recipe-directory repo (NN section 11)
+
 ### BrowserRouter, Router, Link, NavLink, Switch components
 
 Whenever we want to selectively output a component when clicking a link, instead of using anchor tags, we will use **Link** and **NavLink** components.
@@ -2650,4 +2652,193 @@ export default function SearchBar() {
 }
 ```
 
-Second, we need to extract that query string
+Second, we need to extract that query string, fetch the data from db using that query string and then display the results:
+
+```js
+import { useLocation } from 'react-router-dom';
+import RecipeList from '../../components/RecipeList';
+import { useFetch } from '../../hooks/useFetch';
+import './Search.css';
+
+export default function Search() {
+  const queryString = useLocation().search;
+  const queryParams = new URLSearchParams(queryString);
+  const query = queryParams.get('q');
+  console.log(query);
+
+  const url = 'http://localhost:3000/recipes?q=' + query;
+  const { error, isPending, data } = useFetch(url);
+
+  return (
+    <div>
+      <h2 className="page-title">Recipes including "{query}"</h2>
+      {error && <p className="error">{error}</p>}
+      {isPending && <p className="loading">Loading...</p>}
+      {data && <RecipeList recipes={data} />}
+    </div>
+  );
+}
+```
+
+## React Context & Reducers
+
+Still working on react-recipe-directory repo
+NN section 12
+
+### Prop drilling
+
+When a prop has to be passed through several levels of a project's tree just to be available to a grand-grand-grand-grandson component, this is called **prop drilling**. It is ok to have that situation in small apps, but in complex apps this can be avoided.
+
+### Context API
+
+The solution to prop drilling is the **Context API**. It creates what is called as **global states**, which are available on all components that are included in the ContextProvider.
+That allows us, for example, to create global authentications and dark mode.
+
+### Creating a ContextProvider
+
+This example will show how to create a context for theme (dark/light mode).
+
+First we create a ThemeContext component in a new /context folder:
+
+```js
+// /context/ThemeContext.js
+import { createContext } from 'react';
+
+export const ThemeContext = createContext();
+```
+
+Second, in index.js, we wrap our App component with this Context's Provider:
+
+```js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import App from './App';
+import { ThemeContext } from './context/ThemeContext';
+
+ReactDOM.render(
+  <React.StrictMode>
+    <ThemeContext.Provider value={{ color: 'blue' }}>
+      <App />
+    </ThemeContext.Provider>
+  </React.StrictMode>,
+  document.getElementById('root')
+);
+```
+
+Now the 'value' prop will be available in all components.
+But usually we don't want that global prop to be hard-coded, instad we want to be able to change it over time.
+In order to do that, we will create a new component inside of ThemeContext.js, that will return the ThemeContext.Provider component and its children. Inside of this newly created ThemeProvider component, we can add the logic that will mutate the desired global prop as we want:
+
+```js
+// context/ThemeComponent.js
+import { createContext } from 'react';
+
+export const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
+  // custom logic here!
+
+  return (
+    <ThemeContext.Provider value={{ color: 'blue' }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+//index.js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import App from './App';
+import { ThemeProvider } from './context/ThemeContext';
+
+ReactDOM.render(
+  <React.StrictMode>
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>,
+  document.getElementById('root')
+);
+```
+
+### useContext hook
+
+In order to access the Context and change the global props, we have to use a hook called **useContext**.
+Calling useContext and using ThemeContext as an argument will return an object. The properties defined as props of ThemeContext.Provider will be transmitted as properties of this object.
+
+For example, in NavBar.js:
+
+```js
+import { Link } from 'react-router-dom';
+import { useContext } from 'react';
+import SearchBar from './SearchBar';
+import { ThemeContext } from '../context/ThemeContext';
+
+//styles
+import './Navbar.css';
+
+export default function Navbar() {
+  const context = useContext(ThemeContext);
+  console.log(context);
+
+  return (
+    <div className="navbar" style={{ background: context.color }}>
+      <nav>
+        <Link to="/" className="brand">
+          <h1>Cooking Ninja</h1>
+        </Link>
+        <SearchBar />
+        <Link to="/create">Create Recipe</Link>
+      </nav>
+    </div>
+  );
+}
+```
+
+### Creating a useTheme custom hook
+
+This custom hook will easily access the context. Additionally, it will throw an error if anything goes wrong (eg, is the context is being called outside of its scope).
+
+```js
+// useTheme.js
+import { useContext } from 'react';
+import { ThemeContext } from '../context/ThemeContext';
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+
+  if (context === undefined) {
+    throw new Error('useTheme() must be used inside a ThemeProvider');
+  }
+
+  return context;
+};
+
+// Navbar.js
+import { Link } from 'react-router-dom';
+import SearchBar from './SearchBar';
+import { useTheme } from '../hooks/useTheme';
+
+//styles
+import './Navbar.css';
+
+export default function Navbar() {
+  const { color } = useTheme();
+
+  return (
+    <div className="navbar" style={{ background: color }}>
+      <nav>
+        <Link to="/" className="brand">
+          <h1>Cooking Ninja</h1>
+        </Link>
+        <SearchBar />
+        <Link to="/create">Create Recipe</Link>
+      </nav>
+    </div>
+  );
+}
+```
+
+### useReducer hook
