@@ -2323,6 +2323,8 @@ useState() then often becomes hard or error-prone to use - it's easy to write ba
 
 ## React Route
 
+### BrowserRouter, Router, Link, NavLink, Switch components
+
 Whenever we want to selectively output a component when clicking a link, instead of using anchor tags, we will use **Link** and **NavLink** components.
 The paths of these Links and NavLinks must be surrounded by a **Router** component on the root file. The Router component must be surrounded by a **Switch** component to tell React to open one of those components selectively. The **exact** prop/attribute must be used to ensure the "/" path doesn't conflict with other paths that begin with "/".
 The difference between Link and NavLink is that, using NavLink, it automatically adds classes like .active on our links, these classes can be easily manipulated through CSS.
@@ -2523,3 +2525,129 @@ export default function Article() {
   );
 }
 ```
+
+### POST request
+
+In order to send POST request, we need to update our useFetch() custom hook, so that it can handle options and add a header with the request body.
+
+```js
+//useFetch.js (optimized to GET and POST):
+import { useState, useEffect } from 'react';
+
+export const useFetch = (url, method = 'GET') => {
+  const [data, setData] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState(null);
+  const [options, setOptions] = useState(null);
+
+  const postData = (postData) => {
+    setOptions({
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(postData),
+    });
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchData = async (fetchOptions) => {
+      setIsPending(true);
+
+      try {
+        const res = await fetch(url, {
+          ...fetchOptions,
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        const data = await res.json();
+
+        setIsPending(false);
+        setData(data);
+        setError(null);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.log('the fetch was aborted');
+        } else {
+          setIsPending(false);
+          setError('Could not fetch data');
+        }
+      }
+    };
+
+    if (method === 'GET') {
+      fetchData();
+    }
+    if (method === 'POST' && options) {
+      fetchData(options);
+    }
+
+    return () => {
+      controller.abort();
+    };
+  }, [url, options, method]);
+
+  return { data, isPending, error, postData };
+};
+```
+
+To use the useFetch custom hook to send a POST request, we have to pass the data we want to POST as arguments to the postData() function:
+
+```js
+//Create.js
+const { postData, data, error } = useFetch(
+  'http://localhost:3000/recipes',
+  'POST'
+);
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+  postData({
+    title,
+    ingredients,
+    method,
+    cookingTime: cookingTime + ' minutes',
+  });
+};
+```
+
+### Using queries
+
+First we need to take the input value and "redirect" the user to the /search page with that ?q= query parameter.
+
+```js
+//SearchBar.js
+import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import './SearchBar.css';
+
+export default function SearchBar() {
+  const [term, setTerm] = useState('');
+  const history = useHistory();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    history.push(`/search?q=${term}`);
+  };
+
+  return (
+    <div className="searchbar">
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="search">Search:</label>
+        <input
+          type="text"
+          id="search"
+          onChange={(e) => setTerm(e.target.value)}
+          required
+        />
+      </form>
+    </div>
+  );
+}
+```
+
+Second, we need to extract that query string
