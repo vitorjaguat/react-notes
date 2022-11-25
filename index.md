@@ -2842,3 +2842,67 @@ export default function Navbar() {
 ```
 
 ### useReducer hook
+
+The function of useReducer is similar to useState, but it adds more complexity on it. For example, it can take care of several properties.
+
+The structure of useReducer is also different: `const [state, dispatch] = useReducer(choicesReducer, { properties: values })`
+
+The **dispatch** function provides options for the **choicesReducer** function and calls it with these options. `type` and `payload` are properties of the `action` object, that is returned by the dispatch function.
+
+The **choiceReducer** function can be named as we want. It takes the `state` object and the `action` object as parameters and has a switch operator that allows to choose what is returned, accordingly to the action.type that is being provided by dispatch. The switch block will return a new object, with the state object's properties spread, and one property that can be overwritten by the value provided in the `payload` property of the action object.
+
+```js
+// context/ThemeContext.js
+import { createContext, useReducer } from 'react';
+
+export const ThemeContext = createContext();
+
+const themeReducer = (state, action) => {
+  switch (action.type) {
+    case 'CHANGE_COLOR':
+      return { ...state, color: action.payload };
+    default:
+      return state;
+  }
+};
+
+export function ThemeProvider({ children }) {
+  const [state, dispatch] = useReducer(themeReducer, {
+    color: 'blue',
+  });
+
+  const changeColor = (color) => {
+    dispatch({ type: 'CHANGE_COLOR', payload: color });
+  };
+
+  return (
+    <ThemeContext.Provider value={{ ...state, changeColor }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// components/Navbar.js
+import { Link } from 'react-router-dom';
+import SearchBar from './SearchBar';
+import { useTheme } from '../hooks/useTheme';
+
+//styles
+import './Navbar.css';
+
+export default function Navbar() {
+  const { color, changeColor } = useTheme();
+
+  return (
+    <div className="navbar" style={{ background: color }}>
+      <nav onClick={() => changeColor('pink')}>
+        <Link to="/" className="brand">
+          <h1>Cooking Ninja</h1>
+        </Link>
+        <SearchBar />
+        <Link to="/create">Create Recipe</Link>
+      </nav>
+    </div>
+  );
+}
+```
