@@ -2763,6 +2763,11 @@ ReactDOM.render(
 );
 ```
 
+### Context limitations
+
+- React Context is NOT optimized for high frequency changes. For that, we should use Redux.
+- React Context also shouldn't be used to replace ALL component communications and props. Components should still be configurable via props and short "prop chains" might not need any replacement.
+
 ### useContext hook
 
 In order to access the Context and change the global props, we have to use a hook called **useContext**.
@@ -2843,9 +2848,20 @@ export default function Navbar() {
 
 ### useReducer hook
 
+Explanations from Max, lecture 116, repo react-max-section10
+Examples from NN, repo react-recipe-directory
+
 The function of useReducer is similar to useState, but it adds more complexity on it. For example, it can take care of several properties.
 
 The structure of useReducer is also different: `const [state, dispatch] = useReducer(choicesReducer, { properties: values })`
+
+useReducer structure (Max):
+`const [state, dispatchFn] = useReducer(reducerFn, initialState, initFn)`
+_state_: the latest state snapshot, used in the component re-render/re-evaluation cycle;
+_dispatchFn_: a function that can be used to dispatch a new _action_ (ie, trigger an update of the state). This action will be consumed by the first argument in the useReducer function (_reducerFn_);
+_reducerFn_: `(prevState, action) => newState` A function that is triggered automatically once an action is dispatched (via dispatchFn()). It receives the latest state snapshot and should return the new updated state. This function will be called by React and can be defined outside of the component.
+_initialState_: the initial state, just as in useState(initialState);
+_initFn_: (optional) A function to set the initial state programatically.
 
 The **dispatch** function provides options for the **choicesReducer** function and calls it with these options. `type` and `payload` are properties of the `action` object, that is returned by the dispatch function.
 
@@ -2905,4 +2921,199 @@ export default function Navbar() {
     </div>
   );
 }
+```
+
+## Forwarding refs with useImperativeHandler and forwardRef
+
+This topic is not so well explained in Max lectures 128, 129, repo react-max-section10.
+`Still have to study this point!`
+
+```js
+//Login.js
+import React, {
+  useState,
+  useEffect,
+  useReducer,
+  useContext,
+  useRef,
+} from 'react';
+
+import Card from '../UI/Card/Card';
+import classes from './Login.module.css';
+import Button from '../UI/Button/Button';
+import AuthContext from '../../store/auth-context';
+import Input from '../UI/Input/Input';
+
+const emailReducer = (state, action) => {
+  if (action.type === 'USER_INPUT') {
+    return { value: action.val, isValid: action.val.includes('@') };
+  }
+  if (action.type === 'INPUT_BLUR') {
+    return { value: state.value, isValid: state.value.includes('@') };
+  }
+  return { value: '', isValid: false };
+};
+
+const passwordReducer = (state, action) => {
+  if (action.type === 'USER_INPUT') {
+    return { value: action.val, isValid: action.val.trim().length > 6 };
+  }
+  if (action.type === 'INPUT_BLUR') {
+    return { value: state.value, isValid: state.value.trim().length > 6 };
+  }
+  return { value: '', isValid: false };
+};
+
+const Login = (props) => {
+  // const [enteredEmail, setEnteredEmail] = useState('');
+  // const [emailIsValid, setEmailIsValid] = useState();
+  // const [enteredPassword, setEnteredPassword] = useState('');
+  // const [passwordIsValid, setPasswordIsValid] = useState();
+  const [formIsValid, setFormIsValid] = useState(false);
+
+  const [emailState, dispatchEmail] = useReducer(emailReducer, {
+    value: '',
+    isValid: null,
+  });
+
+  const [passwordState, dispatchPassword] = useReducer(passwordReducer, {
+    value: '',
+    isValid: null,
+  });
+
+  const authCtx = useContext(AuthContext);
+
+  const emailInputRef = useRef();
+  const passwordInputRef = useRef();
+
+  useEffect(() => {
+    console.log('EFFECT RUNNING');
+
+    return () => {
+      console.log('EFFECT CLEANUP');
+    };
+  }, []);
+
+  const { isValid: emailIsValid } = emailState;
+  const { isValid: passwordIsValid } = passwordState;
+
+  useEffect(() => {
+    const identifier = setTimeout(() => {
+      console.log('Checking form validity');
+      setFormIsValid(emailIsValid && passwordIsValid);
+    }, 500);
+
+    return () => {
+      console.log('CLEANUP');
+      clearTimeout(identifier);
+    };
+  }, [emailIsValid, passwordIsValid]);
+
+  const emailChangeHandler = (event) => {
+    dispatchEmail({ type: 'USER_INPUT', val: event.target.value });
+
+    // setFormIsValid(
+    //   event.target.value.includes('@') && passwordState.value.trim().length > 6
+    // );
+  };
+
+  const passwordChangeHandler = (event) => {
+    dispatchPassword({ type: 'USER_INPUT', val: event.target.value });
+
+    // setFormIsValid(event.target.value.trim().length > 6 && emailState.isValid);
+  };
+
+  const validateEmailHandler = () => {
+    dispatchEmail({ type: 'INPUT_BLUR' });
+  };
+
+  const validatePasswordHandler = () => {
+    dispatchPassword({ type: 'INPUT_BLUR' });
+  };
+
+  const submitHandler = (event) => {
+    event.preventDefault();
+    if (formIsValid) {
+      authCtx.onLogin(emailState.value, passwordState.value);
+    } else if (!emailIsValid) {
+      emailInputRef.current.focus();
+    } else {
+      passwordInputRef.current.focus();
+    }
+  };
+
+  return (
+    <Card className={classes.login}>
+      <form onSubmit={submitHandler}>
+        <Input
+          ref={emailInputRef}
+          id="email"
+          label="E-mail"
+          type="email"
+          isValid={emailIsValid}
+          value={emailState.value}
+          onChange={emailChangeHandler}
+          onBlur={validateEmailHandler}
+        />
+        <Input
+          ref={passwordInputRef}
+          id="password"
+          label="Password"
+          type="password"
+          isValid={passwordIsValid}
+          value={passwordState.value}
+          onChange={passwordChangeHandler}
+          onBlur={validatePasswordHandler}
+        />
+        <div className={classes.actions}>
+          <Button type="submit" className={classes.btn}>
+            Login
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+};
+
+export default Login;
+
+
+// Input.js
+import React, { useRef, useImperativeHandle } from 'react';
+
+import classes from './Input.module.css';
+
+const Input = React.forwardRef((props, ref) => {
+  const inputRef = useRef();
+
+  const activate = () => {
+    inputRef.current.focus();
+  };
+
+  useImperativeHandle(ref, () => {
+    return {
+      focus: activate,
+    };
+  });
+
+  return (
+    <div
+      className={`${classes.control} ${
+        props.isValid === false ? classes.invalid : ''
+      }`}
+    >
+      <label htmlFor={props.id}>{props.label}</label>
+      <input
+        ref={inputRef}
+        type={props.type}
+        id={props.id}
+        value={props.value}
+        onChange={props.onChange}
+        onBlur={props.onBlur}
+      />
+    </div>
+  );
+});
+
+export default Input;
 ```
