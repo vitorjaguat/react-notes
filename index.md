@@ -3117,3 +3117,202 @@ const Input = React.forwardRef((props, ref) => {
 
 export default Input;
 ```
+
+## React.memo(), useCallback() & useMemo()
+
+Important reminder: React handles the reevaluation of components. ReactDOM handles the rendering of DOM. Components are reevaluated every time a state changes. But the DOM is not always re-rendered - it only happens when something in the DOM changes, and it happens after a comparison between the previous DOM and the current DOM, so that only the changes will actually count.
+
+So, component reevaluation is not the same as re-render of DOM.
+
+### React.memo()
+
+Every time a component is re-evaluated, all its children components will also be re-evaluated - even if there is no change of props, states or context that affects that child.
+
+For small apps, the is ok. But for big apps, we can prevent this behavior by using **React.memo()**. By doing so, the child components of the wrapped component also won't be re-evaluated. A re-evaluation will only be made if a prop/state/context that these components are using has changed.
+
+```js
+import React from 'react';
+
+const DemoOutput = (props) => {
+  console.log('DemoOutput running');
+  return <p>{props.show ? 'This is new!' : ''}</p>;
+};
+
+export default React.memo(DemoOutput);
+```
+
+### useCalback() hook
+
+React.memo() works well when the props passed to the wrapped component is a primitive type. But, with functions, objects and arrays (which are reference types), it doesn't work that well. This is because reference types cannot be compared the same way that primitive types do.
+
+`false === false // true`
+`[1, 2, 3] === [1, 2, 3] // false`
+
+**useCallback()** is a hook that allows us to 'save' a reference type in React memory, so that the function isn't re-created every time the component is re-evaluated.
+
+Besides the function itself, useCallback also receives a second argument: it is an array of dependencies, equal to useEffect (all the variables that comes from the outside of the function, except for set's). Whenever any of the dependencies' value change, the function will then be recreated, updating this value and working perfectly.
+
+```js
+function App() {
+  const [showParagraph, setShowParagraph] = useState(false);
+
+  console.log('APP RUNNING');
+
+  const toggleParagraphHandler = useCallback(() => {
+    setShowParagraph((prevShowParagraph) => !prevShowParagraph);
+  }, []);
+
+  return (
+    <div className="app">
+      <h1>Hi there!</h1>
+      <DemoOutput show={showParagraph} />
+      <Button onClick={toggleParagraphHandler}>Toggle Paragraph</Button>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### useMemo() hook
+
+This is just like useCallback(), but useMemo is used for storing arrays, objects and arrays and objects that are being modified by methods (like sort, filter, etc). Ie, it is used to store data that won't change over time, so that the data is not re-contructed everytime the app is re-evaluated.
+
+```js
+const sortedList = useMemo(() => {
+  return [2, 1, 5, 6].sort((a, b) => a - b);
+}, []);
+```
+
+## Class-based components
+
+repo react-max-section13
+
+Besides building components by using functions, we also can create components by constructing JS Classes. Not too long ago, we HAD to work with classes when building React components, so it's good to learn it because out in the wild we can see this kind of code.
+
+_Functional component:_
+
+```js
+function Product(props) {
+  return <h2>A Product!</h2>;
+}
+```
+
+Components are regular JS functions which return renderable results (typically JSX).
+
+_Class-based component:_
+
+```js
+class Product extends Component {
+  render() {
+    return <h2>A Product!</h2>;
+  }
+}
+```
+
+Components can also be defined as JS classes where a **render()** method defines the output to be rendered.
+
+Traditionally (before React v16.8), you had to use Class-based components to manage states and side-effects. React 16.8 introduced React Hooks for Functional Components. Class-based components CAN'T use hooks.
+
+### Simple Class-based component (no states)
+
+```js
+import classes from './User.module.css';
+import { Component } from 'react';
+
+class User extends Component {
+  render() {
+    return <li className={classes.user}>{this.props.name}</li>;
+  }
+}
+
+// const User = (props) => {
+//   return <li className={classes.user}>{props.name}</li>;
+// };
+
+export default User;
+```
+
+### Class-based component with states
+
+```js
+import { Component } from 'react';
+
+import User from './User';
+import classes from './Users.module.css';
+
+const DUMMY_USERS = [
+  { id: 'u1', name: 'Max' },
+  { id: 'u2', name: 'Manuel' },
+  { id: 'u3', name: 'Julie' },
+];
+
+class Users extends Component {
+  constructor() {
+    super();
+    this.state = {
+      showUsers: true,
+    };
+  }
+
+  toggleUsersHandler() {
+    this.setState((curState) => {
+      return { showUsers: !curState.showUsers };
+    });
+  }
+
+  render() {
+    const usersList = (
+      <ul>
+        {DUMMY_USERS.map((user) => (
+          <User key={user.id} name={user.name} />
+        ))}
+      </ul>
+    );
+
+    return (
+      <div className={classes.users}>
+        <button onClick={this.toggleUsersHandler.bind(this)}>
+          {this.state.showUsers ? 'Hide' : 'Show'} Users
+        </button>
+        {this.state.showUsers && usersList}
+      </div>
+    );
+  }
+}
+
+// const Users = () => {
+//   const [showUsers, setShowUsers] = useState(true);
+
+//   const toggleUsersHandler = () => {
+//     setShowUsers((curState) => !curState);
+//   };
+
+//   const usersList = (
+//     <ul>
+//       {DUMMY_USERS.map((user) => (
+//         <User key={user.id} name={user.name} />
+//       ))}
+//     </ul>
+//   );
+
+//   return (
+//     <div className={classes.users}>
+//       <button onClick={toggleUsersHandler}>
+//         {showUsers ? 'Hide' : 'Show'} Users
+//       </button>
+//       {showUsers && usersList}
+//     </div>
+//   );
+// };
+
+export default Users;
+```
+
+### Lifecycle methods
+
+These are built-in methods in Component class, just as render(). They allow us to handle side-effects in CB-components.
+
+`componentDidMount()` is called once component mounted (was evaluated and rendered). Equivalent to useEffect(..., []) hook, with an empty dependency array.<br>
+`componentDidUpdate()` is called once component is updated (was re-evaluated and re-rendered). Equivalent to useEffect(..., [ someValue ]), with some variable in the dependency array.<br>
+`componentWillUnmount()` is called right before component is unmounted (removed from the DOM). Equivalent to the clean-up function in useEffect.
