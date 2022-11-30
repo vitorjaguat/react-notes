@@ -1683,6 +1683,8 @@ export default function NewEventForm({ addEvent }) {
 ## Fetching data & useEffect
 
 NN section#8
+See [below](#fetching-data-from-api), Max examples of HTTP-requests.
+See [below](#fetching-data-from-a-database), NN examples inside of React Route.
 
 ### useEffect
 
@@ -2134,7 +2136,7 @@ const ErrorModal = (props) => {
 export default ErrorModal;
 ```
 
-## useEffects, Reduce & ContextAPI
+## useEffect, Reduce & ContextAPI
 
 ### What are side effects?
 
@@ -3316,3 +3318,154 @@ These are built-in methods in Component class, just as render(). They allow us t
 `componentDidMount()` is called once component mounted (was evaluated and rendered). Equivalent to useEffect(..., []) hook, with an empty dependency array.<br>
 `componentDidUpdate()` is called once component is updated (was re-evaluated and re-rendered). Equivalent to useEffect(..., [ someValue ]), with some variable in the dependency array.<br>
 `componentWillUnmount()` is called right before component is unmounted (removed from the DOM). Equivalent to the clean-up function in useEffect.
+
+### Class-based components & Context
+
+It is also possible to define a context object using CB-components. See Max lecture 168.
+
+### Error boundaries
+
+Up to now, there is still no way of defining Error Boundaries using Functional Components. We still have to build a CB-component to easily handle errors throughout our application.
+
+For that, we create a CB-component that has a componentDidCatch(error) method - this will be our ErrorBoundary component. Then, we wrap our prone-to-throw-error component inside `<ErrorBoundary></ErrorBoundary>`. It will work as a try/catch on Vanilla JS.
+
+```js
+// Users.js (intentionally created an error when no user is found)
+componentDidUpdate() {
+    if (this.props.users.length === 0) {
+      throw new Error('No users provided!');
+    }
+  }
+
+// ErrorBoundary.js
+import { Component, Fragment } from 'react';
+
+class ErrorBoundary extends Component {
+  constructor() {
+    super();
+    this.state = { hasError: false };
+    this.errorMsg = '';
+  }
+
+  componentDidCatch(error) {
+    console.log(error.message);
+    this.setState({ hasError: true });
+    this.errorMsg = error.message;
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <>
+          <p>Something went wrong!</p>
+          <p>{this.errorMsg}</p>
+        </>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
+
+// UserFinder.js (this is the component where Users.js is called)
+render() {
+    return (
+      <Fragment>
+        <div className={classes.finder}>
+          <input type="search" onChange={this.searchChangeHandler.bind(this)} />
+        </div>
+        <ErrorBoundary>
+          <Users users={this.state.filteredUsers} />
+        </ErrorBoundary>
+      </Fragment>
+    );
+  }
+```
+
+## Fetching data from API
+
+Max, section 14; repo react-max-section14
+
+### Sending a GET request
+
+Max, section 14, lecture 176-179. Send a GET request for Star Wars API, adds state for controlling the output of a loading-message, adds state for handling/showing errors:
+
+```js
+import React, { useState } from 'react';
+
+import MoviesList from './components/MoviesList';
+import './App.css';
+
+function App() {
+  // const dummyMovies = [
+  //   {
+  //     id: 1,
+  //     title: 'Some Dummy Movie',
+  //     openingText: 'This is the opening text of the movie',
+  //     releaseDate: '2021-05-18',
+  //   },
+  //   {
+  //     id: 2,
+  //     title: 'Some Dummy Movie 2',
+  //     openingText: 'This is the second opening text of the movie',
+  //     releaseDate: '2021-05-19',
+  //   },
+  // ];
+
+  const [movies, setMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function fetchMoviesHandler() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('https://swapi.dev/api/films/');
+
+      if (!response.ok) {
+        throw new Error('Something went wrong!');
+      }
+      const data = await response.json();
+
+      const transformedMovies = data.results.map((movieData) => {
+        return {
+          id: movieData.episode_id,
+          title: movieData.title,
+          openingText: movieData.opening_crawl,
+          releaseDate: movieData.release_date,
+        };
+      });
+      setMovies(transformedMovies);
+    } catch (error) {
+      setError(error.message);
+    }
+    setIsLoading(false);
+  }
+
+  let content = <p>Found no movies</p>;
+
+  if (movies.length > 0) {
+    content = <MoviesList movies={movies} />;
+  }
+
+  if (error) {
+    content = <p>{error}</p>;
+  }
+
+  if (isLoading) {
+    content = <p>Loading...</p>;
+  }
+
+  return (
+    <React.Fragment>
+      <section>
+        <button onClick={fetchMoviesHandler}>Fetch Movies</button>
+      </section>
+      <section>{content}</section>
+    </React.Fragment>
+  );
+}
+
+export default App;
+```
