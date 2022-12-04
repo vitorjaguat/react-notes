@@ -1828,6 +1828,8 @@ We can create a custom hook to fetch data from the API, so that everytime we nee
 
 Usually, custom hooks can be stored in separated JS files in a separated folder called 'hooks'.
 
+See more about Custom Hooks [here](#custom-hooks)
+
 ```js
 // hooks/useFetch.js
 import { useState, useEffect } from 'react';
@@ -3398,21 +3400,6 @@ import MoviesList from './components/MoviesList';
 import './App.css';
 
 function App() {
-  // const dummyMovies = [
-  //   {
-  //     id: 1,
-  //     title: 'Some Dummy Movie',
-  //     openingText: 'This is the opening text of the movie',
-  //     releaseDate: '2021-05-18',
-  //   },
-  //   {
-  //     id: 2,
-  //     title: 'Some Dummy Movie 2',
-  //     openingText: 'This is the second opening text of the movie',
-  //     releaseDate: '2021-05-19',
-  //   },
-  // ];
-
   const [movies, setMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -3469,3 +3456,379 @@ function App() {
 
 export default App;
 ```
+
+### Sending a POST request
+
+First, we've set up a Firebase database (called 'react-http'), which also comes with a ready-made backend. Now it's ready to receive get and post requests.
+
+This is the structure of a POST request:
+
+```js
+async function addMovieHandler(movie) {
+  const response = await fetch(
+    'https://react-http-3ff60-default-rtdb.firebaseio.com/movies.json',
+    {
+      method: 'POST',
+      body: JSON.stringify(movie),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  const data = await response.json();
+  console.log(data);
+}
+```
+
+The entire component (see repo react-max-section14):
+
+```js
+import React, { useState, useEffect, useCallback } from 'react';
+
+import MoviesList from './components/MoviesList';
+import AddMovie from './components/AddMovie';
+import './App.css';
+
+function App() {
+  const [movies, setMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchMoviesHandler = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        'https://react-http-3ff60-default-rtdb.firebaseio.com/movies.json'
+      );
+      if (!response.ok) {
+        throw new Error('Something went wrong!');
+      }
+
+      const data = await response.json();
+
+      const loadedMovies = [];
+
+      for (const key in data) {
+        loadedMovies.push({
+          id: key,
+          title: data[key].title,
+          openingText: data[key].openingText,
+          releaseDate: data[key].releaseDate,
+        });
+      }
+
+      setMovies(loadedMovies);
+    } catch (error) {
+      setError(error.message);
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchMoviesHandler();
+  }, [fetchMoviesHandler]);
+
+  async function addMovieHandler(movie) {
+    const response = await fetch(
+      'https://react-http-3ff60-default-rtdb.firebaseio.com/movies.json',
+      {
+        method: 'POST',
+        body: JSON.stringify(movie),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    const data = await response.json();
+    console.log(data);
+  }
+
+  let content = <p>Found no movies.</p>;
+
+  if (movies.length > 0) {
+    content = <MoviesList movies={movies} />;
+  }
+
+  if (error) {
+    content = <p>{error}</p>;
+  }
+
+  if (isLoading) {
+    content = <p>Loading...</p>;
+  }
+
+  return (
+    <React.Fragment>
+      <section>
+        <AddMovie onAddMovie={addMovieHandler} />
+      </section>
+      <section>
+        <button onClick={fetchMoviesHandler}>Fetch Movies</button>
+      </section>
+      <section>{content}</section>
+    </React.Fragment>
+  );
+}
+
+export default App;
+```
+
+## Custom hooks
+
+Custom hooks are reusable functions that can contain stateful logic. Ie, unlike other "regular" functions, custom hooks can use other React hooks and React state.
+repo react-max-section15
+
+We can return values from a custom hook, just as in any other function:
+
+```js
+// hooks/use-counter.js
+import { useState, useEffect } from 'react';
+
+const useCounter = () => {
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCounter((prevCounter) => prevCounter + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return counter;
+};
+
+export default useCounter;
+
+// components/ForwardCounter.js
+import Card from './Card';
+import useCounter from '../hooks/use-counter';
+
+const ForwardCounter = () => {
+  const counter = useCounter();
+
+  return <Card>{counter}</Card>;
+};
+
+export default ForwardCounter;
+```
+
+### Adding parameters to custom hooks
+
+We can change the behavior of custom hooks, according to parameters. For example, we can make the useCounter hook count backwards if it is called with an argument of 'false':
+
+```js
+// hooks/use-counter.js
+import { useState, useEffect } from 'react';
+
+const useCounter = (forwards = true) => {
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (forwards) {
+        setCounter((prevCounter) => prevCounter + 1);
+      } else {
+        setCounter((prevCounter) => prevCounter - 1);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [forwards]);
+
+  return counter;
+};
+
+export default useCounter;
+
+// components/BackwardCounter.js
+import { useState, useEffect } from 'react';
+
+import Card from './Card';
+import useCounter from '../hooks/use-counter';
+
+const BackwardCounter = () => {
+  const counter = useCounter(false);
+
+  return <Card>{counter}</Card>;
+};
+
+export default BackwardCounter;
+```
+
+### Form validation custom hook
+
+max section 16, repo react-max-section16
+
+When validating a form, validation can take 3 steps:
+
+1. validate whenever the user inputs something, letter by letter (onChange);
+2. validate whenever the user removes the focus from the input (onBlur);
+3. validate when the user submits the form (onSubmit);
+
+The 3 steps are equally important.
+We've built this **useInput** custom hook to manage all of them. The hook returns/manages 3 states and 3 functions, so that we don't need to handle states in our component to validate forms. Here is how it works:
+
+```js
+// hooks/use-input.js
+import { useState } from 'react';
+
+const useInput = (validateValue) => {
+  const [enteredValue, setEnteredValue] = useState('');
+  const [isTouched, setIsTouched] = useState(false);
+
+  const valueIsValid = validateValue(enteredValue);
+  const hasError = !valueIsValid && isTouched;
+
+  const valueChangeHandler = (event) => {
+    setEnteredValue(event.target.value);
+  };
+
+  const inputBlurHandler = () => {
+    setIsTouched(true);
+  };
+
+  const reset = () => {
+    setEnteredValue('');
+    setIsTouched(false);
+  };
+
+  return {
+    value: enteredValue,
+    isValid: valueIsValid,
+    hasError,
+    valueChangeHandler,
+    inputBlurHandler,
+    reset,
+  };
+};
+
+export default useInput;
+
+// components/BasicForm.js
+import useInput from '../hooks/use-input';
+
+const BasicForm = (props) => {
+  const {
+    value: enteredFirstName,
+    isValid: firstNameIsValid,
+    hasError: firstNameHasError,
+    valueChangeHandler: firstNameChangeHandler,
+    inputBlurHandler: firstNameBlurHandler,
+    reset: firstNameReset,
+  } = useInput((value) => value.trim().length > 0);
+
+  const {
+    value: enteredLastName,
+    isValid: lastNameIsValid,
+    hasError: lastNameHasError,
+    valueChangeHandler: lastNameChangeHandler,
+    inputBlurHandler: lastNameBlurHandler,
+    reset: lastNameReset,
+  } = useInput((value) => value.trim().length > 0);
+
+  const {
+    value: enteredEmail,
+    isValid: emailIsValid,
+    hasError: emailHasError,
+    valueChangeHandler: emailChangeHandler,
+    inputBlurHandler: emailBlurHandler,
+    reset: emailReset,
+  } = useInput((value) => value.includes('@'));
+
+  let formIsValid = false;
+  if (firstNameIsValid && lastNameIsValid && emailIsValid) {
+    formIsValid = true;
+  }
+
+  const formSubmissionHandler = (e) => {
+    e.preventDefault();
+
+    //extra-validation (the user could enable the button via Devtools)
+    if (!formIsValid) {
+      return;
+    }
+
+    console.log(enteredFirstName, enteredLastName, enteredEmail);
+    firstNameReset();
+    lastNameReset();
+    emailReset();
+  };
+
+  const firstNameClass = firstNameHasError
+    ? 'form-control invalid'
+    : 'form-control';
+
+  const lastNameClass = lastNameHasError
+    ? 'form-control invalid'
+    : 'form-control';
+
+  const emailClass = emailHasError ? 'form-control invalid' : 'form-control';
+
+  return (
+    <form onSubmit={formSubmissionHandler}>
+      <div className="control-group">
+        <div className={firstNameClass}>
+          <label htmlFor="firstname">First Name</label>
+          <input
+            type="text"
+            id="firstname"
+            value={enteredFirstName}
+            onChange={firstNameChangeHandler}
+            onBlur={firstNameBlurHandler}
+          />
+          {firstNameHasError && (
+            <p className="error-text">Please enter a valid first name.</p>
+          )}
+        </div>
+        <div className={lastNameClass}>
+          <label htmlFor="lastname">Last Name</label>
+          <input
+            type="text"
+            id="lastname"
+            onChange={lastNameChangeHandler}
+            onBlur={lastNameBlurHandler}
+            value={enteredLastName}
+          />
+          {lastNameHasError && (
+            <p className="error-text">Please enter a valid last name.</p>
+          )}
+        </div>
+      </div>
+      <div className={emailClass}>
+        <label htmlFor="email">E-Mail Address</label>
+        <input
+          type="text"
+          id="email"
+          onChange={emailChangeHandler}
+          onBlur={emailBlurHandler}
+          value={enteredEmail}
+        />
+        {emailHasError && (
+          <p className="error-text">Please enter a valid e-mail.</p>
+        )}
+      </div>
+      <div className="form-actions">
+        <button disabled={!formIsValid}>Submit</button>
+      </div>
+    </form>
+  );
+};
+
+export default BasicForm;
+```
+
+Other possibility when working with forms and React is to make use of libraries like **Formik** and **React Hook Form**.
+
+## Firebase
+
+Firebase is a Backend-as-a-Service (Baas). It provides developers with a variety of tools and services to help them develop their apps.
+
+Firebase is categorized as a NoSQL database program, which stores data in JSON-like documents.
+
+Some of its key-features are: authentication, realtime database, cloud hosting, test lab and notifications.
+
+### Firestore Databases
+
+Firestore is the newest database service provided by Firebase. The old one is called Realtime Database and still is available.
