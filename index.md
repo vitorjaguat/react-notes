@@ -3831,4 +3831,250 @@ Some of its key-features are: authentication, realtime database, cloud hosting, 
 
 ### Firestore Databases
 
+NN, section 13, repo react-recipe-directory
+
 Firestore is the newest database service provided by Firebase. The old one is called Realtime Database and still is available.
+
+### Connecting to Firebase
+
+1. `npm install firebase@8.5`
+2. Get the configuration object, that includes a project id, etc. In order to do that, we need to register a front-end web-app for this project. We can have different apps connected to a same database - for example, web, Android and IOS versions for the same application.
+3. Create a `config.js` file in your src folder.
+
+```js
+// src/firebase/config.js
+import firebase from 'firebase/app';
+import 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyBQzAksGcSAbgR9i9a0WNJFdSi33EJKBLQ',
+  authDomain: 'react-recipe-directory-d6466.firebaseapp.com',
+  projectId: 'react-recipe-directory-d6466',
+  storageBucket: 'react-recipe-directory-d6466.appspot.com',
+  messagingSenderId: '118388807863',
+  appId: '1:118388807863:web:af0ed816296554ad649532',
+};
+
+//init firebase
+firebase.initializeApp(firebaseConfig);
+
+//init services
+const projectFirestore = firebase.firestore();
+
+export { projectFirestore };
+```
+
+4. And that's it! Now the front and back-end of our project are connected through the exported object.
+
+### Fetching a Firestore collection
+
+Now we can use **projectFirestore** to access and fetch the data from our database. In that, we will call the method `.collection('collectionName')`, then the method `.get()`, which returns a promise that can be handled using `.then()`.
+By calling the `data()` method that's inside of each object in the `docs` object in the snapshot, we get access to an object with the recipes properties.
+
+`(Tip: console.log(snapshot) to understand its structure and the properties and functions it provides!)`
+
+```js
+//Home.js
+import { projectFirestore } from '../../firebase/config';
+import { useEffect, useState } from 'react';
+import RecipeList from '../../components/RecipeList';
+import './Home.css';
+
+export default function Home() {
+  const [data, setData] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setIsPending(true);
+
+    projectFirestore
+      .collection('recipes')
+      .get()
+      .then((snapshot) => {
+        // console.log(snapshot);
+        if (snapshot.empty) {
+          setError('No recipes to load');
+          setIsPending(false);
+        } else {
+          let results = [];
+          snapshot.docs.forEach((doc) => {
+            results.push({ id: doc.id, ...doc.data() });
+          });
+          setData(results);
+          setIsPending(false);
+        }
+      })
+      .catch((err) => {
+        setError(err.message);
+        setIsPending(false);
+      });
+  }, []);
+
+  return (
+    <div className="home">
+      {error && <p className="error">{error}</p>}
+      {isPending && <p className="loading">Loading...</p>}
+      {data && <RecipeList recipes={data} />}
+    </div>
+  );
+}
+```
+
+### Fetching a Firestore document
+
+On our Home.js page, each recipe has a link to recipe page with details on that recipe. This link has the route **/recipes/:id**.
+
+Now, on Recipe.js, we're goint to extract that **id** from the address using useParams(): `const { id } = useParams();`.
+
+Then we can use this id to fetch data from that specific **document** inside the 'recipes' collection in our Firestore database.
+
+`Tip: console.log(doc) to understand the structure of this object and the properties and functions it provides!`
+
+```js
+import { projectFirestore } from '../../firebase/config';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useTheme } from '../../hooks/useTheme';
+
+//styles
+import './Recipe.css';
+
+export default function Recipe() {
+  const { id } = useParams();
+  const { mode } = useTheme();
+
+  const [recipe, setRecipe] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setIsPending(true);
+
+    projectFirestore
+      .collection('recipes')
+      .doc(id)
+      .get()
+      .then((doc) => {
+        // console.log(doc);
+        if (doc.exists) {
+          setIsPending(false);
+          setRecipe(doc.data());
+        } else {
+          setIsPending(false);
+          setError('Could not find this recipe');
+        }
+      });
+  }, [id]);
+
+  return (
+    <div className={`recipe ${mode}`}>
+      {error && <p className="error">{error}</p>}
+      {isPending && <p className="loading">Loading...</p>}
+      {recipe && (
+        <>
+          <h2 className="page-title">{recipe.title}</h2>
+          <p>Takes {recipe.cookingTime} to cook.</p>
+          <ul>
+            {recipe.ingredients.map((ing) => (
+              <li key={ing}>{ing}</li>
+            ))}
+          </ul>
+          <p className="method">{recipe.method}</p>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+### Making POST requests to Firetore
+
+In order to make a POST request to Firestore, we just need to call `.collection('collectionName')` and then `.add(docToBePosted)`. It is good to wrap this in a try/catch block.
+
+```js
+//Create.js
+import { projectFirestore } from '../../firebase/config';
+
+etc etc
+
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    const doc = {
+      title,
+      ingredients,
+      method,
+      cookingTime: cookingTime + ' minutes',
+    };
+
+    try {
+      await projectFirestore.collection('recipes').add(doc);
+      history.push('/');
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  etc etc
+```
+
+### Deleting a doc from a Firetore collection
+
+For that, we select the doc by calling `projectFirestore.collection('recipes').doc(id)` and delete it by calling `.delete()`.
+
+```js
+import { projectFirestore } from '../../firebase/config';
+
+etc etc
+
+const handleClick = (id) => {
+  projectFirestore.collection('recipes').doc(id).delete();
+};
+
+etc etc
+```
+
+### Real-time collection data
+
+After deleting the doc from the database, the page keeps showing it - that's because it has not been re-rendered and didn't fetch the data again.
+
+In order to fix that, in Home.js (that's where the GET request for the collection list of docs is being made), we substitute `.get().then()` for `.onSnapshot()`. The onSnapshot method takes 2 arguments: the first is a function to handle the snapshot (eg, extracting all docs to create an array of objects); the second is a function to handle errors.
+
+When using the onSnapshot method, we must add a **clean-up function** to useEffect. Otherwise, once we leave the page, the app will keep receiving new snapshots triggered by that method. The clean-up function will be executed as soon as the component unmounts.
+
+Regularly, the onSnapshot method returns a unsubscribe function. We save it to a variable called `unsub` and call `unsub()` in our clean-up function.
+
+```js
+//Home.js
+import { projectFirestore } from '../../firebase/config';
+
+etc etc
+
+useEffect(() => {
+    setIsPending(true);
+
+    const unsub = projectFirestore.collection('recipes').onSnapshot(
+      (snapshot) => {
+        if (snapshot.empty) {
+          setError('No recipes to load');
+          setIsPending(false);
+        } else {
+          let results = [];
+          snapshot.docs.forEach((doc) => {
+            results.push({ id: doc.id, ...doc.data() });
+          });
+          setData(results);
+          setIsPending(false);
+        }
+      },
+      (err) => {
+        setError(err.message);
+        setIsPending(false);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
+  etc etc
+```
