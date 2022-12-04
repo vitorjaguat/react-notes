@@ -4078,3 +4078,50 @@ useEffect(() => {
 
   etc etc
 ```
+
+### Updating documents in Firestore
+
+To update a document, we refer to that particular document and update it by calling `projectFirestore.collection('recipes').doc(id).update({ oldProperty: newValue })`.
+
+```js
+// Recipe.js
+const handleUpdate = () => {
+  projectFirestore
+    .collection('recipes')
+    .doc(id)
+    .update({
+      title: `${recipe.title} UPDATED`,
+    });
+};
+```
+
+### Real-time document data
+
+Same as when we deleted an item from a list, now we updated a particular document, but we have to refresh in order to fetch it again from the database, because the component wasn't re-rendered.
+
+Same as [before](#real-time-collection-data), we're going to use the `onSnapshot()` method.
+
+Same as before also, we have to add a clean-up function to unsubscribe to onSnapshot, otherwise the app would keep listening to changes on the collection even if we leave the page.
+
+```js
+//Recipe.js
+useEffect(() => {
+  setIsPending(true);
+
+  const unsub = projectFirestore
+    .collection('recipes')
+    .doc(id)
+    .onSnapshot((doc) => {
+      // console.log(doc);
+      if (doc.exists) {
+        setIsPending(false);
+        setRecipe(doc.data());
+      } else {
+        setIsPending(false);
+        setError('Could not find this recipe');
+      }
+    });
+
+  return () => unsub();
+}, [id]);
+```
