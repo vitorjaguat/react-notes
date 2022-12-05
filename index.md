@@ -3821,11 +3821,11 @@ export default BasicForm;
 
 Other possibility when working with forms and React is to make use of libraries like **Formik** and **React Hook Form**.
 
-## Firebase
+## Firebase Firestore (database)
 
 Firebase is a Backend-as-a-Service (Baas). It provides developers with a variety of tools and services to help them develop their apps.
 
-Firebase is categorized as a NoSQL database program, which stores data in JSON-like documents.
+Firebase Firestore is categorized as a NoSQL database program, which stores data in JSON-like documents.
 
 Some of its key-features are: authentication, realtime database, cloud hosting, test lab and notifications.
 
@@ -4124,4 +4124,290 @@ useEffect(() => {
 
   return () => unsub();
 }, [id]);
+```
+
+## Firebase Authentication
+
+### Connecting Firebase Auth
+
+After installing `npm install firebase@8.5` and creating a config.js file (see [here](#connecting-to-firebase)), we have to enable e-mail authentication on Firebase website.
+
+We have also to add Firebase Auth to our config.js file, like this:
+
+```js
+import firebase from 'firebase/app';
+import 'firebase/firestore';
+import 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyD5NU6********FA5RxWkaM_PSbp6Ug',
+  authDomain: 'react-finance-tracker-64f25.firebaseapp.com',
+  projectId: 'react-finance-tracker-64f25',
+  storageBucket: 'react-finance-tracker-64f25.appspot.com',
+  messagingSenderId: '1098***72131',
+  appId: '1:10********131:web:ab66984c8090b3bd7353b6',
+};
+
+//init firebase
+firebase.initializeApp(firebaseConfig);
+
+//init services
+const projectFirestore = firebase.firestore();
+const projectAuth = firebase.auth();
+
+export { projectFirestore, projectAuth };
+```
+
+### Creating a signup custom hook
+
+We can create a custom hook to create a new user with the e-mail/password provided in the signup form. We should use the object **projectAuth** in order to do that.
+
+```js
+import { useState } from 'react';
+import { projectAuth } from '../firebase/config';
+
+export const useSignup = () => {
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+
+  const signup = async (email, password, displayName) => {
+    setError(null);
+    setIsPending(true);
+
+    try {
+      //signup user
+      const res = await projectAuth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+      console.log(res.user);
+
+      if (!res) {
+        throw new Error('Could not complete signup');
+      }
+
+      //add displayName to user
+      await res.user.updateProfile({ displayName: displayName });
+      setIsPending(false);
+      setError(null);
+    } catch (err) {
+      console.log(err.message);
+      setError(err.message);
+      setIsPending(false);
+    }
+  };
+
+  return { error, isPending, signup };
+};
+```
+
+Using the hook in the Signup.js component:
+
+```js
+//Signup.js
+import { useSignup } from '../../hooks/useSignup';
+
+etc etc
+
+const { signup, isPending, error } = useSignup();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    signup(email, password, displayName);
+  };
+
+  etc etc
+```
+
+Complete code:
+
+```js
+//Signup.js
+import { useState } from 'react';
+import { useSignup } from '../../hooks/useSignup';
+import styles from './Signup.module.css';
+
+export default function Signup() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const { signup, isPending, error } = useSignup();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    signup(email, password, displayName);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles['signup-form']}>
+      <h2>Signup</h2>
+      <label>
+        <span>email:</span>
+        <input
+          type="email"
+          onChange={(e) => setEmail(e.target.value)}
+          value={email}
+        />
+      </label>
+      <label>
+        <span>password:</span>
+        <input
+          type="password"
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+        />
+      </label>
+      <label>
+        <span>display name:</span>
+        <input
+          type="text"
+          onChange={(e) => setDisplayName(e.target.value)}
+          value={displayName}
+        />
+      </label>
+      {!isPending && <button className="btn">Signup</button>}
+      {isPending && (
+        <button className="btn" disabled>
+          loading
+        </button>
+      )}
+      {error && <p>{error}</p>}
+    </form>
+  );
+}
+```
+
+### Creating an Auth Context
+
+In order to share the situation of authentication throughout all of the pages on the app, we need to create a Context and wrap the App component in the ContextProvider, so that login info is available in all the components in our app.
+
+1. Creating the Context and ContextProvider:
+
+```js
+// context/AuthContext.js
+import { createContext, useReducer } from 'react';
+
+export const AuthContext = createContext();
+
+export const authReducer = (state, action) => {
+  switch (action.type) {
+    default:
+      return state;
+  }
+};
+
+export const AuthContextProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(authReducer, {
+    user: null,
+  });
+
+  return (
+    <AuthContext.Provider value={{ ...state, dispatch }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+2. Wrapping the entire App inside the ContextProvider:
+
+```js
+// index.js
+import { createContext, useReducer } from 'react';
+
+export const AuthContext = createContext();
+
+export const authReducer = (state, action) => {
+  switch (action.type) {
+    case 'LOGIN':
+      return { ...state, user: action.payload };
+    //we are exporting the dispatch function (as a value in the AuthContext.Provider component in index.js), so that we can dispatch actions from other components and custom hooks.
+    default:
+      return state;
+  }
+};
+
+export const AuthContextProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(authReducer, {
+    user: null,
+  });
+
+  return (
+    <AuthContext.Provider value={{ ...state, dispatch }}>
+      //we are exporting the dispatch function(as a value in the
+      AuthContext.Provider component in index.js), so that we can dispatch
+      actions from other components and custom hooks.
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+3. Creating a useAuthContext to consume the context:
+
+```js
+// hooks/useAuthContext.js
+import { AuthContext } from '../context/AuthContext';
+import { useContext } from 'react';
+
+export const useAuthContext = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw Error('useAuthContext must be used inside an AuthContextProvider');
+  }
+
+  return context;
+};
+```
+
+### Dispatching a Login action
+
+We are exporting the dispatch function (as a value in the AuthContext.Provider component in index.js), so that we can dispatch actions from other components and custom hooks.
+
+So, we're going to dispatch a type LOGIN action with the payload equal to the new user object, from the useSignup custom hook:
+
+```js
+// hooks/useSignup.js
+import { useState } from 'react';
+import { projectAuth } from '../firebase/config';
+import { useAuthContext } from './useAuthContext'; //importing useAuthContext, which exports the 'context' object, which contains the state of the context AND the dispatch fnc (see index.js)
+
+export const useSignup = () => {
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch } = useAuthContext(); //deconstructing dispatch fnc
+
+  const signup = async (email, password, displayName) => {
+    setError(null);
+    setIsPending(true);
+
+    try {
+      //signup user
+      const res = await projectAuth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+
+      if (!res) {
+        throw new Error('Could not complete signup');
+      }
+
+      //add displayName to user
+      await res.user.updateProfile({ displayName: displayName });
+
+      //dispatch login action ******
+      dispatch({ type: 'LOGIN', payload: res.user });
+
+      setIsPending(false);
+      setError(null);
+    } catch (err) {
+      console.log(err.message);
+      setError(err.message);
+      setIsPending(false);
+    }
+  };
+
+  return { error, isPending, signup };
+};
 ```
