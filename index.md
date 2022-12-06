@@ -3829,6 +3829,8 @@ Firebase Firestore is categorized as a NoSQL database program, which stores data
 
 Some of its key-features are: authentication, realtime database, cloud hosting, test lab and notifications.
 
+More Firestore (timestamp, custom hook) [here](#timestamp)
+
 ### Firestore Databases
 
 NN, section 13, repo react-recipe-directory
@@ -4369,11 +4371,12 @@ So, we're going to dispatch a type LOGIN action with the payload equal to the ne
 
 ```js
 // hooks/useSignup.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { projectAuth } from '../firebase/config';
 import { useAuthContext } from './useAuthContext'; //importing useAuthContext, which exports the 'context' object, which contains the state of the context AND the dispatch fnc (see index.js)
 
 export const useSignup = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
   const [error, setError] = useState(null);
   const [isPending, setIsPending] = useState(false);
   const { dispatch } = useAuthContext(); //deconstructing dispatch fnc
@@ -4399,15 +4402,533 @@ export const useSignup = () => {
       //dispatch login action ******
       dispatch({ type: 'LOGIN', payload: res.user });
 
-      setIsPending(false);
-      setError(null);
+      //update states (will not run if the component unmounts)
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
     } catch (err) {
-      console.log(err.message);
-      setError(err.message);
-      setIsPending(false);
+      if (!isCancelled) {
+        console.log(err.message);
+        setError(err.message);
+        setIsPending(false);
+      }
     }
   };
 
+  useEffect(() => {
+    return setIsCancelled(true);
+  }, []);
+
   return { error, isPending, signup };
+};
+```
+
+### Creating and using a useLogout custom hook
+
+1. Creating useLogout:
+
+```js
+import { useState, useEffect } from 'react';
+import { projectAuth } from '../firebase/config';
+import { useAuthContext } from './useAuthContext';
+
+export const useLogout = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch } = useAuthContext();
+
+  const logout = async () => {
+    setError(null);
+    setIsPending(true);
+
+    //sign the user out
+    try {
+      await projectAuth.signOut();
+
+      //dispatch logout action
+      dispatch({ type: 'LOGOUT' });
+
+      //update states
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
+    } catch (err) {
+      console.log(err.message);
+      if (!isCancelled) {
+        setError(err.message);
+        setIsPending(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return setIsCancelled(true);
+  }, []);
+
+  return { logout, error, isPending };
+};
+```
+
+2. Using useLogout in the Navbar component:
+
+```js
+import { Link } from 'react-router-dom';
+import { useLogout } from '../hooks/useLogout'; //importing
+import styles from './Navbar.module.css';
+
+export default function Navbar() {
+  const { logout } = useLogout(); //extracting the logout fnc
+
+  return (
+    <nav className={styles.navbar}>
+      <ul>
+        <li className={styles.title}>
+          <Link to="/">myMoney</Link>
+        </li>
+        <li>
+          <Link to="/login">Login</Link>
+        </li>
+        <li>
+          <Link to="/signup">Signup</Link>
+        </li>
+        <button className="btn" onClick={logout}>
+          Logout
+        </button>//using the logout fnc
+      </ul>
+    </nav>
+  );
+}
+```
+
+### IMPORTANT! Adding cleanup functions to our hooks
+
+Whenever a hook or other function is able to make a fetch request to a backend, it's important to make a clean-up function to cancel the request if the component is unmonted. Otherwise, if the component is unmounted before the promise is fulfilled, there will be an error.
+_This update has already been made in useSignup and useLogout (above), as well as in the repo._
+
+### Creating and using a useLogin hook
+
+This hook is pretty much the same as useLogout and useSignup:
+
+```js
+// hooks/useLogin.js
+import { useState, useEffect } from 'react';
+import { projectAuth } from '../firebase/config';
+import { useAuthContext } from './useAuthContext';
+
+export const useLogin = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch } = useAuthContext();
+
+  const login = async (email, password) => {
+    setError(null);
+    setIsPending(true);
+
+    //sign the user in
+    try {
+      const res = await projectAuth.signInWithEmailAndPassword(email, password);
+
+      //dispatch login action
+      dispatch({ type: 'LOGIN', payload: res.user });
+
+      //update states (will not run if the component is unmounted)
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (!isCancelled) {
+        console.log(err.message);
+        setError(err.message);
+        setIsPending(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return setIsCancelled(true);
+  }, []);
+
+  return { login, error, isPending };
+};
+
+// pages/login/Login.js
+import { useState } from 'react';
+import { useLogin } from '../../hooks/useLogin';
+import styles from './Login.module.css';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login, error, isPending } = useLogin();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    login(email, password);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles['login-form']}>
+      <h2>Login</h2>
+      <label>
+        <span>email:</span>
+        <input
+          type="email"
+          onChange={(e) => setEmail(e.target.value)}
+          value={email}
+        />
+      </label>
+      <label>
+        <span>password:</span>
+        <input
+          type="password"
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+        />
+      </label>
+      {!isPending && <button className="btn">Login</button>}
+      {isPending && (
+        <button className="btn" disabled>
+          loading
+        </button>
+      )}
+      {error && <p>{error}</p>}
+    </form>
+  );
+}
+```
+
+### Conditionally showing user content
+
+In our auth context object, we have access to the user property, whose value is an object with displayName, email and other info. Then we can conditionally show content depending if the user is/isn't logged in.
+
+1. import useAuthContext (or use useContext directly);
+2. deconstruct the user property from the context object.
+3. conditionally show content if the the user property is truthy.
+
+```js
+import { Link } from 'react-router-dom';
+import { useLogout } from '../hooks/useLogout';
+import { useAuthContext } from '../hooks/useAuthContext';
+import styles from './Navbar.module.css';
+
+export default function Navbar() {
+  const { logout } = useLogout();
+  const { user } = useAuthContext();
+
+  return (
+    <nav className={styles.navbar}>
+      <ul>
+        <li className={styles.title}>
+          <Link to="/">myMoney</Link>
+        </li>
+
+        {!user && (
+          <>
+            <li>
+              <Link to="/login">Login</Link>
+            </li>
+            <li>
+              <Link to="/signup">Signup</Link>
+            </li>
+          </>
+        )}
+
+        {user && (
+          <>
+            <li>hello, {user.displayName}</li>
+            <li>
+              <button className="btn" onClick={logout}>
+                Logout
+              </button>
+            </li>
+          </>
+        )}
+      </ul>
+    </nav>
+  );
+}
+```
+
+### Checking if the user is logged-in with onAuthStateChanged()
+
+Up to now, if the user reloads the page, our front-end will state that he is logged out - even if he is currently logged in according to Firebase Auth.
+To prevent this kind of disarrangement, we can call **projectAuth.onAuthStateChanged()** whenever the page is first loaded. For that, we can use useEffect. If there is a logged user, we will dispatch a type 'AUTH_IS_READY' action, which will set both the user and the **authIsReady** property in our auth-context.
+We need also to **unsubcribe** to this method, otherwise this function will run everytime the logged user changes.
+
+```js
+import { createContext, useReducer } from 'react';
+import { useEffect } from 'react';
+import { projectAuth } from '../firebase/config';
+
+export const AuthContext = createContext();
+
+export const authReducer = (state, action) => {
+  switch (action.type) {
+    case 'LOGIN':
+      return { ...state, user: action.payload };
+    case 'LOGOUT':
+      return { ...state, user: null };
+    case 'AUTH_IS_READY':
+      return { ...state, user: action.payload, authIsReady: true };
+    default:
+      return state;
+  }
+};
+
+export const AuthContextProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(authReducer, {
+    user: null,
+    authIsReady: false,
+  });
+
+  useEffect(() => {
+    const unsub = projectAuth.onAuthStateChanged((user) => {
+      dispatch({ type: 'AUTH_IS_READY', payload: user });
+      unsub();
+    });
+  }, []);
+
+  console.log('AuthContext state:', state);
+
+  return (
+    <AuthContext.Provider value={{ ...state, dispatch }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+```
+
+Now, in our App.js, we can conditionally show the entire app when the authIsReady property of the context is truthy:
+
+```js
+etc etc
+
+function App() {
+  const { authIsReady } = useAuthContext();
+
+  return (
+    <div className="App">
+      {authIsReady && (
+        <BrowserRouter>
+          <Navbar />
+          <Switch>
+            <Route exact path="/">
+              <Home />
+            </Route>
+            <Route path="/login">
+              <Login />
+            </Route>
+            <Route path="/signup">
+              <Signup />
+            </Route>
+          </Switch>
+        </BrowserRouter>
+      )}
+    </div>
+  );
+}
+
+etc etc
+```
+
+### Route Guarding with Redirect
+
+If the user is not logged in, we have to protect the routes that he cannot access. We use the Redirect component, that is a built-in component inside of 'react'.
+
+```js
+import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
+import { useAuthContext } from './hooks/useAuthContext';
+import Home from './pages/home/Home';
+import Login from './pages/login/Login';
+import Signup from './pages/signup/Signup';
+import Navbar from './components/Navbar';
+
+function App() {
+  const { authIsReady, user } = useAuthContext();
+
+  return (
+    <div className="App">
+      {authIsReady && (
+        <BrowserRouter>
+          <Navbar />
+          <Switch>
+            <Route exact path="/">
+              {!user && <Redirect to="/login" />}
+              {user && <Home />}
+            </Route>
+            <Route path="/login">
+              {user && <Redirect to="/" />}
+              {!user && <Login />}
+            </Route>
+            <Route path="/signup">
+              {user && <Redirect to="/" />}
+              {!user && <Signup />}
+            </Route>
+          </Switch>
+        </BrowserRouter>
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+In React 6^, there is no Redirect component, instead we can use the Navigate component, something like this:
+
+```js
+import { BrowserRouter, Route, Switch, Navigate } from 'react-router-dom';
+import { useAuthContext } from './hooks/useAuthContext';
+import Home from './pages/home/Home';
+import Login from './pages/login/Login';
+import Signup from './pages/signup/Signup';
+import Navbar from './components/Navbar';
+
+function App() {
+  const { authIsReady, user } = useAuthContext();
+
+  return (
+    <div className="App">
+      {authIsReady && (
+        <BrowserRouter>
+          <Navbar />
+          <Routes>
+            <Route
+              path="/"
+              element={user ? <Home /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/login"
+              element={!user ? <Login /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/signup"
+              element={!user ? <Signup /> : <Navigate to="/" />}
+            />
+          </Routes>
+        </BrowserRouter>
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+### Firestore Timestamp
+
+Timestamp is the way by which Firestore stores dates. Sometimes we need a property that has a timestamp as its value, so that we can know the exact date and time when this document was created.
+
+In order to be able to create timestamps, first we need to adjust our config file:
+
+```js
+// firebase/config.js
+import firebase from 'firebase/app';
+import 'firebase/firestore';
+import 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyD5NU6NTRsnt4dg2kFA5RxWkaM_PSbp6Ug',
+  authDomain: 'react-finance-tracker-64f25.firebaseapp.com',
+  projectId: 'react-finance-tracker-64f25',
+  storageBucket: 'react-finance-tracker-64f25.appspot.com',
+  messagingSenderId: '1098735872131',
+  appId: '1:1098735872131:web:ab66984c8090b3bd7353b6',
+};
+
+//init firebase
+firebase.initializeApp(firebaseConfig);
+
+//init services
+const projectFirestore = firebase.firestore();
+const projectAuth = firebase.auth();
+
+//timestamp ***
+const timestamp = firebase.firestore.Timestamp;
+
+export { projectFirestore, projectAuth, timestamp };
+```
+
+### Creating a useFirestore custom hook
+
+This custom hook will allow us to add and delete documents to a Firestore collection.
+
+```js
+import { useReducer, useEffect, useState } from 'react';
+import { projectFirestore, timestamp } from '../firebase/config';
+
+let initialState = {
+  document: null,
+  isPending: false,
+  error: null,
+  success: null,
+};
+
+const firestoreReducer = (state, action) => {
+  switch (action.type) {
+    case 'IS_PENDING':
+      return { isPending: true, document: null, success: false, error: null };
+    case 'ADDED_DOCUMENT':
+      return {
+        isPending: false,
+        document: action.payload,
+        success: true,
+        error: null,
+      };
+    case 'ERROR':
+      return {
+        isPending: false,
+        document: null,
+        success: false,
+        error: action.payload,
+      };
+    default:
+      return state;
+  }
+};
+
+export const useFirestore = (collection) => {
+  const [response, dispatch] = useReducer(firestoreReducer, initialState);
+  const [isCancelled, setIsCancelled] = useState(false);
+
+  //collection ref
+  const ref = projectFirestore.collection(collection);
+
+  //only dispatch if not cancelled
+  const dispatchIfNotCancelled = (action) => {
+    if (!isCancelled) {
+      dispatch(action);
+    }
+  };
+
+  //add a document
+  const addDocument = async (doc) => {
+    dispatch({ type: 'IS_PENDING' });
+
+    try {
+      const createdAt = timestamp.fromDate(new Date());
+      const addedDocument = await ref.add({ ...doc, createdAt });
+      dispatchIfNotCancelled({
+        type: 'ADDED_DOCUMENT',
+        payload: addedDocument,
+      });
+    } catch (err) {
+      dispatchIfNotCancelled({ type: 'ERROR', payload: err.message });
+    }
+  };
+
+  //delete a document
+  const deleteDocument = async (id) => {};
+
+  useEffect(() => {
+    return () => setIsCancelled(true);
+  }, []);
+
+  return { addDocument, deleteDocument, response };
 };
 ```
