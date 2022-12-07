@@ -4872,20 +4872,27 @@ let initialState = {
 const firestoreReducer = (state, action) => {
   switch (action.type) {
     case 'IS_PENDING':
-      return { isPending: true, document: null, success: false, error: null };
+      return { success: false, isPending: true, error: null, document: null };
+    case 'ERROR':
+      return {
+        success: false,
+        isPending: false,
+        error: action.payload,
+        document: null,
+      };
     case 'ADDED_DOCUMENT':
       return {
-        isPending: false,
-        document: action.payload,
         success: true,
+        isPending: false,
         error: null,
+        document: action.payload,
       };
-    case 'ERROR':
+    case 'DELETED_DOCUMENT':
       return {
         isPending: false,
         document: null,
-        success: false,
-        error: action.payload,
+        success: true,
+        error: null,
       };
     default:
       return state;
@@ -4896,17 +4903,17 @@ export const useFirestore = (collection) => {
   const [response, dispatch] = useReducer(firestoreReducer, initialState);
   const [isCancelled, setIsCancelled] = useState(false);
 
-  //collection ref
+  // collection ref
   const ref = projectFirestore.collection(collection);
 
-  //only dispatch if not cancelled
+  // only dispatch if not cancelled
   const dispatchIfNotCancelled = (action) => {
     if (!isCancelled) {
       dispatch(action);
     }
   };
 
-  //add a document
+  // add a document
   const addDocument = async (doc) => {
     dispatch({ type: 'IS_PENDING' });
 
@@ -4922,8 +4929,19 @@ export const useFirestore = (collection) => {
     }
   };
 
-  //delete a document
-  const deleteDocument = async (id) => {};
+  // delete a document
+  const deleteDocument = async (id) => {
+    dispatch({ type: 'IS_PENDING' });
+
+    try {
+      await ref.doc(id).delete();
+      dispatchIfNotCancelled({
+        type: 'DELETED_DOCUMENT',
+      });
+    } catch (err) {
+      dispatchIfNotCancelled({ type: 'ERROR', payload: 'could not delete' });
+    }
+  };
 
   useEffect(() => {
     return () => setIsCancelled(true);
@@ -4932,3 +4950,271 @@ export const useFirestore = (collection) => {
   return { addDocument, deleteDocument, response };
 };
 ```
+
+### Creating a useCollection hook to fetch collection data (all docs)
+
+_see final version of this hook [here](#usecollection-final-version)_
+
+This custom hook uses the method `projectFirestore.collection('collectionName').onSnapshot()` to get access to a snapshot of that collection. The data is extracted from each document of that collection by using the `.data()` method. More on onSnapshot [here](#real-time-collection-data).
+
+We call it inside of a useEffect having collection as a dependency, so that every time the collection changes, the function is called again.
+
+The onSnapshot method returns an **unsubcribe** function, which we can use inside a clean-up function to stop listening to changes on that collection when the component unmounts.
+
+```js
+import { useState, useEffect } from 'react';
+import { projectFirestore } from '../firebase/config';
+
+export const useCollection = (collection) => {
+  const [documents, setDocuments] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let ref = projectFirestore.collection(collection);
+
+    const unsubscribe = ref.onSnapshot(
+      (snapshot) => {
+        let results = [];
+        snapshot.docs.forEach((doc) => {
+          results.push({ ...doc.data(), id: doc.id });
+        });
+
+        //update state
+        setDocuments(results);
+        setError(null);
+      },
+      (error) => {
+        console.log(error);
+        setError('could not fetch the data');
+      }
+    );
+
+    //unsubscribe on unmount
+    return () => unsubscribe();
+  }, [collection]);
+
+  return { documents, error };
+};
+```
+
+To use this hook, we pass a collection and receive a documents array, which can be iterated to generate a list. In our project, the documents array is being loaded in the Home.js components, and passed to TransactionList.js as a prop (transactions).
+
+### Firestore queries
+
+Up to now, our transaction list is not filtering transaction by user, so we are always seeing all transaction on every user homepage.
+
+We do that by using Firestore queries, which are passed with the `.where('property', 'logicalOperator', 'value')` method.
+
+For example:
+
+```js
+let ref = db.collection('cities');
+let refWithQuery = ref.where('capital', '==', 'true');
+//this query will filter all cities that are capitals
+```
+
+So, we have to update our useCollection hook and also our Home.js component, to pass the query:
+_see final version of this hook [here](#usecollection-final-version)_
+
+```js
+//useCollection.js
+
+import { useEffect, useState, useRef } from 'react';
+import { projectFirestore } from '../firebase/config';
+
+export const useCollection = (collection, _query) => {
+  const [documents, setDocuments] = useState(null);
+  const [error, setError] = useState(null);
+
+  //_query is an array (reference type), so it is "different" on every function call -> so we have to use useRef to "freeze" it
+  const query = useRef(_query).current;
+
+  useEffect(() => {
+    let ref = projectFirestore.collection(collection);
+
+    if (query) {
+      ref = ref.where(...query);
+    }
+
+    const unsubscribe = ref.onSnapshot(
+      (snapshot) => {
+        let results = [];
+        snapshot.docs.forEach((doc) => {
+          console.log(doc);
+          results.push({ ...doc.data(), id: doc.id });
+        });
+
+        // update state
+        setDocuments(results);
+        setError(null);
+      },
+      (error) => {
+        console.log(error);
+        setError('could not fetch the data');
+      }
+    );
+
+    // unsubscribe on unmount
+    return () => unsubscribe();
+  }, [collection, query]);
+
+  return { documents, error };
+};
+
+//Home.js
+etc etc
+
+const { user } = useAuthContext();
+const { documents, error } = useCollection('transactions', ['uid', '==', user.uid]);
+
+etc etc
+```
+
+### Ordering queries with .orderBy()
+
+_see final version of this hook [here](#usecollection-final-version)_
+
+By default, a query retrieves all documents that satisfy the query in ascending order by document ID. You can specify the sort order for your data using orderBy(), and you can limit the number of documents retrieved using limit().
+
+The .orderBy() method is similar to the .where() method, but it allows us to order a query request in descending order. It accepts 2 arguments, the first is the property which will be evaluated, the second is 'desc' or 'asc'.
+
+In our project, we added a property called 'createdAt' in each of our document, in the moment when we created them. So we can pass this property as an argument to order the documents that are returned by our request.
+
+Ex.: `db.collection('collectionName').where('year', '>', '2020').orderBy('amount', 'desc')`
+
+### useCollection FINAL VERSION!
+
+So, the final version of our useCollection hook is:
+
+```js
+// useCollection.js
+import { useEffect, useState, useRef } from 'react';
+import { projectFirestore } from '../firebase/config';
+
+export const useCollection = (collection, _query, _orderBy) => {
+  const [documents, setDocuments] = useState(null);
+  const [error, setError] = useState(null);
+
+  //_query is an array (reference type), so it is "different" on every function call -> so we have to use useRef to "freeze" it
+  const query = useRef(_query).current;
+  const orderBy = useRef(_orderBy).current;
+
+  useEffect(() => {
+    let ref = projectFirestore.collection(collection);
+
+    if (query) {
+      ref = ref.where(...query);
+    }
+    if (orderBy) {
+      ref = ref.orderBy(...orderBy);
+    }
+
+    const unsubscribe = ref.onSnapshot(
+      (snapshot) => {
+        let results = [];
+        snapshot.docs.forEach((doc) => {
+          console.log(doc);
+          results.push({ ...doc.data(), id: doc.id });
+        });
+
+        // update state
+        setDocuments(results);
+        setError(null);
+      },
+      (error) => {
+        console.log(error);
+        setError('could not fetch the data');
+      }
+    );
+
+    // unsubscribe on unmount
+    return () => unsubscribe();
+  }, [collection, query, orderBy]);
+
+  return { documents, error };
+};
+```
+
+And here is an example of its usage:
+
+```js
+// Home.js
+import { useAuthContext } from '../../hooks/useAuthContext';
+import { useCollection } from '../../hooks/useCollection';
+
+// styles
+import styles from './Home.module.css';
+
+// components
+import TransactionForm from './TransactionForm';
+import TransactionList from './TransactionList';
+
+export default function Home() {
+  const { user } = useAuthContext();
+  const { documents, error } = useCollection(
+    'transactions',
+    ['uid', '==', user.uid],
+    ['createdAt', 'desc']
+  );
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.content}>
+        {error && <p>{error}</p>}
+        {documents && <TransactionList transactions={documents} />}
+      </div>
+      <div className={styles.sidebar}>
+        <TransactionForm uid={user.uid} />
+      </div>
+    </div>
+  );
+}
+```
+
+## Firestore Rules
+
+Before deploying our app in production-mode, we have to change Firestore Rules to guarantee the security of our data.
+
+We can edit and publich the rules directly on the Firebase website, but is preferable to to it by using the Firebase CLI.
+
+1. Install Firebase Tools CLI globally:
+   `npm install -g firebase-tools`
+   mac/linux: `sudo npm install -g firebase-tools`
+
+2. Login:
+   `firebase login`
+
+3. On the projects directory:
+   `firebase init`
+
+4. Follow steps: NN lecture 143
+
+5. Firebase init will create a bunch of files inside our project's directory. One of these is `firebase.rules`, which we will edit now:
+
+```js
+//firebase.rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /transactions/{document=**} { //match any document inside the transactions collection
+      // allow read, write;
+      // allow read, create, delete, update;
+
+      allow create: if request.auth != null;
+      // if there is an auth token, user can create a new document
+
+      allow read, delete: if request.auth.uid == resource.data.uid;
+      //if the uid of the request matches the uid of the resource we want to access
+    }
+  }
+}
+```
+
+6. Deploy our Firestore rules to Firebase:
+   `firebase deploy --only firestore`
+
+## Deploying
+
+1. `npm run build`
+2. `firebase deploy`
