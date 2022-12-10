@@ -5655,7 +5655,53 @@ const Header = () => {
 export default Header;
 ```
 
-###
+### Async tasks, side-effects & Redux
 
 _here begins repo react-max-19-advanced-redux_
 _max section19 lecture 249_
+
+Reducers must be pure, side-effect free, synchronous functions.
+
+They should only receive an old state and an action as input, and output a new state. Nothing more.
+
+If we want to store the Redux output in a server (sending a PUT or POST request), we cannot do it inside of Redux reducers.
+
+So, where should side-effects and async tasks be executed? There are 2 answers for that question:
+
+- inside the components (eg, using useEffect)
+- inside the action creators
+
+#### Redux & async tasks 1: performing the async tasks using useEffects inside of components
+
+We can choose a component, eg App.js, use useSelector to listen to changes made by Redux on the state, then use useEffect to send a POST or PUT request to the backend.
+
+```js
+import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import Cart from './components/Cart/Cart';
+import Layout from './components/Layout/Layout';
+import Products from './components/Shop/Products';
+
+function App() {
+  const showCart = useSelector((state) => state.ui.cartIsVisible);
+  const cart = useSelector((state) => state.cart);
+
+  useEffect(() => {
+    fetch('https://react-http-3ff60-default-rtdb.firebaseio.com/cart.json', {
+      method: 'PUT',
+      body: JSON.stringify(cart),
+    });
+  }, [cart]);
+
+  return (
+    <Layout>
+      {showCart && <Cart />}
+      <Products />
+    </Layout>
+  );
+}
+
+export default App;
+```
+
+The only problem with this solution is that useEffect will execute when our app starts, replacing the data in Firebase collection with an empty array (which is the Redux cart state initialState). We'll fix it later on.
