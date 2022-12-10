@@ -5218,3 +5218,444 @@ service cloud.firestore {
 
 1. `npm run build`
 2. `firebase deploy`
+   To update, it's the same process.
+
+## Redux
+
+_repo react-max-section18-redux, section 18, lecture 225_
+
+Redux is a _state management system_ for cross-component or app-wide state.
+
+Disadvantages of React Context:
+
+- complex setup/management: for example, when managing several states in a context or when nesting several context-providers
+- performance: for changes that happen more frequently, performance might be a disadvantage
+
+### Redux: core concepts
+
+- central data (state) store
+- components "subscribe" to the store
+- components NEVER directly manipulate the store
+- _reducer functions_ can manipulate the store. Reducer functions are functions that receive an input and _transform_ it into another thing.
+- components dispatch _actions_, that are forwarded to the reducer function, that spits out the new data into the central store
+
+### Redux: basic syntax
+
+Similar to useReducer, Redux also takes a reducerFunction as parameter, and this reducerFunction also takes the state and an action as parameters:
+`https://www.youtube.com/watch?v=HKU24nY8Hsc&list=PL4cUxeGkcC9ij8CfkAY2RAGb-tmkNwQHG&index=34`
+
+```js
+import { legacy_createStore as createStore } from 'redux'; //import createStore
+
+const initState = {
+  todos: [],
+  posts: []
+} //initial state
+
+function myreducer(state = initState, action) {
+  if(action.type === 'ADD_TODO') {
+    return {
+      ...state,
+      todos: [...state.todos, action.todo]
+    }
+  }
+} //reducer function with options (if/switch)
+
+const store = createStore(myreducer); //the global store object
+
+const todoAction = { type: 'ADD_TODO', todo: 'buy milk'}; //setting an action
+
+store.dispatch(todoAction) //dispatching the action
+
+store.subscribe() => {
+  console.log('state updated');
+  console.log(store.getState()); //
+} //subscribing to changes on the global store
+
+```
+
+_The reducerFunction..._ should be a pure function (same input leads to same output, ie, there must be no side-effects inside of that function).
+_The reducerFunction..._ receives 2 parameters: the old _state_ and a dispatched _action_.
+_The reducerFunction..._ must return a new state object.
+
+### Step by step
+
+1. Setting the global store:
+
+```js
+import { legacy_createStore as createStore } from 'redux';
+
+const counterReducer = (state = { counter: 0 }, action) => {
+  if (action.type === 'increment') {
+    return { counter: state.counter + 1 };
+  }
+  if (action.type === 'decrement') {
+    return { counter: state.counter - 1 };
+  }
+  return state;
+};
+
+const store = createStore(counterReducer);
+
+export default store;
+```
+
+2. Providing the store:
+   We can provide the store in App.js or any other file to wrap its child components inside the scope of that store.
+
+```js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
+
+import './index.css';
+import App from './App';
+import store from './store';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <Provider store={store}>
+    <App />
+  </Provider>
+);
+```
+
+3. Using data in components:
+   First import the hook _useSelector_ from 'react-redux'. This hook makes data from the state object available throughout the app. It receives a function that "selects" a property of the current state. It also subscribes to that store and, if the component is unmounted, it unsubscribes to it.
+
+```js
+import { useSelector } from 'react-redux'; //importing
+import classes from './Counter.module.css';
+
+const Counter = () => {
+  const counter = useSelector((state) => state.counter); //"selecting"
+
+  const toggleCounterHandler = () => {};
+
+  return (
+    <main className={classes.counter}>
+      <h1>Redux Counter</h1>
+      <div className={classes.value}>{counter}</div> //using
+      <button onClick={toggleCounterHandler}>Toggle Counter</button>
+    </main>
+  );
+};
+
+export default Counter;
+```
+
+4. Dispatching actions from inside components
+   To dispatch actions from inside components, we will use another 'react-redux' hook, _useDispatch_.
+
+```js
+import { useSelector, useDispatch } from 'react-redux'; //importing
+import classes from './Counter.module.css';
+
+const Counter = () => {
+  const dispatch = useDispatch(); //saving
+  const counter = useSelector((state) => state.counter);
+
+  const incrementHandler = () => {
+    dispatch({ type: 'increment' }); //calling
+  };
+
+  const decrementHandler = () => {
+    dispatch({ type: 'decrement' }); //calling
+  };
+
+  const toggleCounterHandler = () => {};
+
+  return (
+    <main className={classes.counter}>
+      <h1>Redux Counter</h1>
+      <div className={classes.value}>{counter}</div>
+      <div>
+        <button onClick={incrementHandler}>Increment</button>
+        <button onClick={decrementHandler}>Decrement</button>
+      </div>
+      <button onClick={toggleCounterHandler}>Toggle Counter</button>
+    </main>
+  );
+};
+
+export default Counter;
+```
+
+4. 1. Redux with Class-based components
+      We can also use Redux with CB-components. For that, we need to use the _connect_ function:
+
+```js
+import { useSelector, useDispatch, connect } from 'react-redux'; //importing
+import classes from './Counter.module.css';
+import { Component } from 'react';
+
+class Counter extends Component {
+  incrementHandler() {
+    this.props.increment();
+  }
+
+  decrementHandler() {
+    this.props.decrement();
+  }
+
+  toggleCounterHandler() {}
+
+  render() {
+    return (
+      <main className={classes.counter}>
+        <h1>Redux Counter</h1>
+        <div className={classes.value}>{this.props.counter}</div>
+        <div>
+          <button onClick={this.incrementHandler.bind(this)}>Increment</button>
+          <button onClick={this.decrementHandler.bind(this)}>Decrement</button>
+        </div>
+        <button onClick={this.toggleCounterHandler}>Toggle Counter</button>
+      </main>
+    );
+  }
+}
+
+//we have to create these 2 functions to pass as arguments in the connect function:
+const mapStateToProps = (state) => {
+  return {
+    counter: state.counter,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    increment: () => dispatch({ type: 'increment' }),
+    decrement: () => dispatch({ type: 'decrement' }),
+  };
+};
+
+//connect() returns a function, which will be called having our Counter component as an argument:
+export default connect(mapStateToProps, mapDispatchToProps)(Counter);
+```
+
+### REDUX TOOLKIT
+
+_repo react-max-section18-redux, section 18, lecture 240_
+
+Redux Toolkit simplifies the writing and setting-up of Redux. It is the way to go, especially if we work with deeply nested state objects with a large number of properties.
+
+`npm i @reduxjs/toolkit`
+
+This set-up of the store object and reducer function creates, behind the scenes, methods that can be executed inside the component:
+
+```js
+//////// store/index.js
+// import { legacy_createStore as createStore } from 'redux';
+import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+const initialState = {
+  counter: 0,
+  showCounter: false,
+};
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: initialState,
+  reducers: {
+    increment(state) {
+      state.counter++;
+      //properties can be updated like this, toolkit will prevent from causing side-effects on the original object, creating a new object for us.
+    },
+    decrement(state) {
+      state.counter--;
+    },
+    increase(state, action) {
+      state.counter += action.payload;
+    },
+    toggleCounter(state) {
+      state.showCounter = !state.showCounter;
+    },
+  },
+});
+
+// const counterReducer = (state = initialState, action) => {
+//   if (action.type === 'increment') {
+//     return { ...state, counter: state.counter + 1 };
+//   }
+//   if (action.type === 'increase') {
+//     return { ...state, counter: state.counter + action.amount };
+//   }
+//   if (action.type === 'decrement') {
+//     return { ...state, counter: state.counter - 1 };
+//   }
+//   if (action.type === 'toggle') {
+//     return { ...state, showCounter: !state.showCounter };
+//   }
+//   return state;
+// };
+
+const store = configureStore({
+  reducer: counterSlice.reducer,
+  //'reducer' will "merge" all reducer functions into one big function, with cases.
+});
+
+export const counterActions = counterSlice.actions;
+
+export default store;
+
+
+////// components/Counter.js
+import { useSelector, useDispatch } from 'react-redux';
+import { counterActions } from '../store';
+import classes from './Counter.module.css';
+
+const Counter = () => {
+  const dispatch = useDispatch();
+  const counter = useSelector((state) => state.counter);
+  const show = useSelector((state) => state.showCounter);
+
+  const incrementHandler = () => {
+    // dispatch({ type: 'increment' });
+    dispatch(counterActions.increment());
+  };
+
+  const increaseHandler = () => {
+    // dispatch({ type: 'increase', amount: 5 });
+    dispatch(counterActions.increase(5));
+    //{ type: SOME_UNIQUE_IDENTIFIER, payload: 5}  the name of property is 'payload'!
+  };
+
+  const decrementHandler = () => {
+    // dispatch({ type: 'decrement' });
+    dispatch(counterActions.decrement());
+  };
+
+  const toggleCounterHandler = () => {
+    // dispatch({ type: 'toggle' });
+    dispatch(counterActions.toggleCounter());
+  };
+
+  return (
+    <main className={classes.counter}>
+      <h1>Redux Counter</h1>
+      {show && <div className={classes.value}>{counter}</div>}
+      <div>
+        <button onClick={incrementHandler}>Increment</button>
+        <button onClick={increaseHandler}>Increase by 5</button>
+        <button onClick={decrementHandler}>Decrement</button>
+      </div>
+      <button onClick={toggleCounterHandler}>Toggle Counter</button>
+    </main>
+  );
+};
+
+export default Counter;
+```
+
+### Multiple slices
+
+When we want to manage multiple states that belong to different features of the app, it's good that we work with more than one slice. We can put everyting inside of a single slice, but this is not a good approach. Remember the _separation of concerns_ principle in programming.
+
+When working with multiple slices, we still have only one **store**.
+
+We must import **useDispatch** into the files where we want to dispatch actions.
+We must import **useSelector** into the files where we need to check states.
+
+We can put each slice in a separated file.
+
+```js
+/////// store/index.js
+import { createSlice, configureStore } from '@reduxjs/toolkit';
+
+const initialCounterState = {
+  counter: 0,
+  showCounter: false,
+};
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState: initialCounterState,
+  reducers: {
+    increment(state) {
+      state.counter++;
+    },
+    decrement(state) {
+      state.counter--;
+    },
+    increase(state, action) {
+      state.counter += action.payload;
+    },
+    toggleCounter(state) {
+      state.showCounter = !state.showCounter;
+    },
+  },
+});
+
+const initialAuthState = {
+  isAuthenticated: false,
+};
+
+//new slice:
+const authSlice = createSlice({
+  name: 'authentication',
+  initialState: initialAuthState,
+  reducers: {
+    login(state) {
+      state.isAuthenticated = true;
+    },
+    logout(state) {
+      state.isAuthenticated = false;
+    },
+  },
+});
+
+const store = configureStore({
+  reducer: { counter: counterSlice.reducer, auth: authSlice.reducer },
+  //'reducer' will "merge" all reducer functions into one big function, with cases.
+});
+
+export const counterActions = counterSlice.actions;
+export const authActions = authSlice.actions;
+
+export default store;
+
+
+///////Header.js
+import { useSelector, useDispatch } from 'react-redux';
+import { authActions } from '../store';
+
+import classes from './Header.module.css';
+
+const Header = () => {
+  const isAuth = useSelector((state) => state.auth.isAuthenticated);
+  const dispatch = useDispatch();
+
+  const logoutHandler = () => {
+    dispatch(authActions.logout());
+  };
+
+  return (
+    <header className={classes.header}>
+      <h1>Redux Auth</h1>
+
+      {isAuth && (
+        <nav>
+          <ul>
+            <li>
+              <a href="/">My Products</a>
+            </li>
+            <li>
+              <a href="/">My Sales</a>
+            </li>
+            <li>
+              <button onClick={logoutHandler}>Logout</button>
+            </li>
+          </ul>
+        </nav>
+      )}
+    </header>
+  );
+};
+
+export default Header;
+```
+
+###
+
+_here begins repo react-max-19-advanced-redux_
+_max section19 lecture 249_
