@@ -5669,7 +5669,7 @@ If we want to store the Redux output in a server (sending a PUT or POST request)
 So, where should side-effects and async tasks be executed? There are 2 answers for that question:
 
 - inside the components (eg, using useEffect)
-- inside the action creators
+- inside the action creators (thunks)
 
 #### Redux & async tasks 1: performing the async tasks using useEffects inside of components
 
@@ -5704,4 +5704,49 @@ function App() {
 export default App;
 ```
 
-The only problem with this solution is that useEffect will execute when our app starts, replacing the data in Firebase collection with an empty array (which is the Redux cart state initialState). We'll fix it later on.
+The only problem with this solution is that useEffect will execute when our app starts, replacing the data in Firebase collection with an empty array (which is the Redux cart state initialState). This problem can be solved this way:
+
+```js
+import { useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import Cart from './components/Cart/Cart';
+import Layout from './components/Layout/Layout';
+import Products from './components/Shop/Products';
+
+let isInitial = true; // solving!
+
+function App() {
+  const showCart = useSelector((state) => state.ui.cartIsVisible);
+  const cart = useSelector((state) => state.cart);
+
+  useEffect(() => {
+    if (isInitial) {
+      isInitial = false;
+      return;
+    } // solved! now it won't run at start.
+
+    fetch('https://react-http-3ff60-default-rtdb.firebaseio.com/cart.json', {
+      method: 'PUT',
+      body: JSON.stringify(cart),
+    });
+  }, [cart]);
+
+  return (
+    <Layout>
+      {showCart && <Cart />}
+      <Products />
+    </Layout>
+  );
+}
+
+export default App;
+```
+
+_Complete code contains error catching and notifications component. See repo react-max-19-advanced-redux App2.js_
+
+#### Redux & async tasks 2: performing the async tasks using thunks
+
+**What is "thunk"?**
+
+- a function that delays an action until later.
+- an action creator function that does NOT return the action itself but another function which eventually returns the action.
