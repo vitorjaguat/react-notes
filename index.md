@@ -2325,18 +2325,22 @@ useState() then often becomes hard or error-prone to use - it's easy to write ba
 **useReducer()** can be used as a replacement for useState() if you need more powerful state management.
 **COMPLETAR**
 
-## React Route
+## React Router
 
 Working on react-recipe-directory repo (NN section 11)
 
 ### BrowserRouter, Router, Link, NavLink, Switch components
 
 Whenever we want to selectively output a component when clicking a link, instead of using anchor tags, we will use **Link** and **NavLink** components.
+
+**NavLink** is the same as **Link**, but it has more features. We can add an **activeClassName** attribute to NavLink, it will add this class on that element whenever it's active (whenever we're ON THAT path). Eg:
+`<NavLink activeClassName={classes.active} to="/products">`
+
 The paths of these Links and NavLinks must be surrounded by a **Router** component on the root file. The Router component must be surrounded by a **Switch** component to tell React to open one of those components selectively. The **exact** prop/attribute must be used to ensure the "/" path doesn't conflict with other paths that begin with "/".
 The difference between Link and NavLink is that, using NavLink, it automatically adds classes like .active on our links, these classes can be easily manipulated through CSS.
 
 ```js
-npm i react-route-dom
+npm i react-router-dom
 
 //App.js
 import './App.css';
@@ -5746,7 +5750,187 @@ _Complete code contains error catching and notifications component. See repo rea
 
 #### Redux & async tasks 2: performing the async tasks using thunks
 
+Max section 19, lecture 259^
 **What is "thunk"?**
 
 - a function that delays an action until later.
 - an action creator function that does NOT return the action itself but another function which eventually returns the action.
+
+### Redux DevTools
+
+It is a browser extension that allows us to get a comprehensive outlook of all actions being performed throughout the app's workflow.
+
+We can time-travel (jump) to a specific action, and see what the app looks like when that action just has been performed.
+
+## localStorage
+
+https://javascript.plainenglish.io/creating-a-persistent-cart-in-react-f287ed4b4df0
+
+In this tutorial, Francisco Sainz explains how to use localStorage to implement a persistent shopping cart in ReactJS.
+
+### Benefits of using LocalStorage
+
+As you may be wondering, local storage is used to store key information about a user when he is logged in, which ensures that he has access to a service or functionality without needing to request permission from a server or other every time the client makes a request.
+
+In other words, you have instant access to this memory as long as it exists, so you don’t have to worry about async functions or anything like that.
+
+This wouldn’t be a cool tutorial without some code, so let’s get into it. However, before we start, let me explain how localStorage actually works in practice.
+
+It’s important to understand that anything you store inside this local storage is saved as a string, which is basically in JSON format.
+
+### localStorage methods
+
+#### localStorage.setItem(key: string, value: string)
+
+Notice that to set (save). an item we need to do it as a key value pair, with both consisting of strings. This is important, because as I said before, localStorage will only save strings properly.
+
+To set the value we want — the cart array — we can simply call **JSON.stringify(cart)** and it will be converted to a string representation.
+
+#### localStorage.getItem(key: string)
+
+To get an item, we simply input the key that we used to set the item previously, this too as a string.
+
+Because the value is a string, we call **JSON.parse(cartString)** to convert it to whatever it was before it was stored — an array, in our case.
+
+#### localStorage.removeItem(key: string)
+
+Lastly, to remove a value, we simply pass its key and it will be forever erased from your browser’s local storage, living only in your dreams.
+
+### Implementing a cart using localStorage
+
+We will start by creating an array that will hold our cart’s state by using the useState hook and setting its initial value to an empty array.
+
+```js
+const App = () => {
+  let [cart, setCart] = useState([]);
+
+  let localCart = localStorage.getItem('cart');
+
+  const addItem = (item) => {};
+  const updateItem = (itemID, amount) => {};
+  const removeItem = (itemID) => {};
+
+  //this is called on component mount
+  useEffect(() => {
+    //turn it into js
+    localCart = JSON.parse(localCart);
+    //load persisted cart into state if it exists
+    if (localCart) setCart(localCart);
+  }, []); //the empty array ensures useEffect only runs once
+
+  return <div></div>;
+};
+```
+
+That was easy. You can also see that I added some empty functions that we will use to implement the cart’s logic too.
+
+You can also see that I implemented useEffect, which is a hook that can be run as a functional component version of componentDidMount or componentWillMount. This is done because if the user refreshes the page, the local state will be lost, so we need to load the cart inside localStorage — if it exists — to restore it to the app’s state.
+
+#### Adding a new item
+
+There are two conditions we must account for when adding an item to the cart.
+
+- Adding an item that does not yet exist inside the cart
+- Adding an item that already exists inside the cart.
+
+First of all, we need to check to see if the item exists in the array, and if it doesn’t, just add it, but if it does, we need to update the existing item’s quantity.
+
+Finally, we need to save the updated cart to localStorage in case our user is getting trigger happy with the refresh button.
+
+```js
+cons addItem = (item) => {
+
+  //create a copy of our cart state, avoid overwritting existing state
+  let cartCopy = [...cart];
+
+  //assuming we have an ID field in our item
+  let {ID} = item;
+
+  //look for item in cart array
+  let existingItem = cartCopy.find(cartItem => cartItem.ID == ID);
+
+  //if item already exists
+  if (existingItem) {
+      existingItem.quantity += item.quantity //update item
+  } else { //if item doesn't exist, simply add it
+    cartCopy.push(item)
+  }
+
+  //update app state
+  setCart(cartCopy)
+
+  //make cart a string and store in local space
+  let stringCart = JSON.stringify(cartCopy);
+  localStorage.setItem("cart", stringCart)
+
+}
+```
+
+#### Updating an Item
+
+To update an item, our function will receive two parameters, the itemID, and the amount to add or subtract.
+
+The amount can be negative, meaning that we are subtracting x quality from an existing item, or adding them if positive.
+
+We can assume the function will always be called on an item that exists in the list, but its always a good idea to make your code work whatever happens, so we will address that scenario either way.
+
+We need to worry about two things here:
+
+- What happens if an item doesn’t exists
+- What happens if the final quantity is equal or less than 0
+
+We can simply use find on the array like we did before, and check if it exists. If it doesn’t, we simply return to stop the function.
+
+In case it does exist, we can update and validate the resulting quantity of the affected item.
+
+We do this by simply updating the quantity and check if the result is ≤ 0. If it is, we must delete the item from the cart.
+
+```js
+//editItem.js
+const editItem = (itemID, amount) => {
+  let cartCopy = [...cart];
+
+  //find if item exists, just in case
+  let existentItem = cartCopy.find((item) => item.ID == itemID);
+
+  //if it doesnt exist simply return
+  if (!existentItem) return;
+
+  //continue and update quantity
+  existentItem.quantity += amount;
+
+  //validate result
+  if (existentItem.quantity <= 0) {
+    //remove item  by filtering it from cart array
+    cartCopy = cartCopy.filter((item) => item.ID != itemID);
+  }
+
+  //again, update state and localState
+  setCart(cartCopy);
+
+  let cartString = JSON.stringify(cartCopy);
+  localStorage.setItem('cart', cartString);
+};
+```
+
+We can remove an item shown above by filtering it from the array. Again, we must update the localState with our resulting state.
+
+```js
+//remove.js
+const removeItem = (itemID) => {
+  //create cartCopy
+  let cartCopy = [...cart];
+
+  cartCopy = cartCopy.filter((item) => item.ID != itemID);
+
+  //update state and local
+  setCart(cartCopy);
+
+  let cartString = JSON.stringify(cartCopy);
+  localStorage.setItem('cart', cartString);
+};
+```
+
+Our functionality is finally done. Our cart will now be persisted inside localStorage even if the user refreshes or closes the browser.
+
+Additionally, you can reset the cart from memory by calling `localStorage.removeItem(“cart”)` if your user checks out or completes a purchase.
