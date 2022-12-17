@@ -2331,6 +2331,53 @@ Working on react-recipe-directory repo (NN section 11)
 
 ### BrowserRouter, Router, Link, NavLink, Switch components
 
+**v6**
+
+---
+
+_repo react-max-20-router branch react-router6-example1_
+
+Switch no longer exists. Instead, we wrap our routes in a Routes component.
+
+The prop `exact` also don't exist anymore. React Router DOM v6 includes its feature by default on the app's routes.
+
+The order of the Route components doesn't matter in v6: React will always match the best paths for each route.
+
+new syntax to define routes:
+
+```js
+<Routes>
+  <Route path="/welcome" element={<Welcome />} />
+
+  <Route path="/products" element={<Products />} />
+
+  <Route path="/products/:productId" element={<ProductDetail />} />
+</Routes>
+```
+
+Links stay the same in v6.
+
+NavLinks: activeClassName prop doesn't exist anymore. Instead, we have to manually pass a function with the navData object as a parameter:
+
+```js
+//v5
+<NavLink activeClassName={classes.active} to="/products">
+  Products
+</NavLink>
+
+//v6
+<NavLink className={(navData) => (navData.isActive ? classes.active : '')} to="/products">
+  Products
+</NavLink>
+```
+
+_repo react-max-20-router branch react-router6-example2_
+The Redirect component doesn't exist anymore. Instead, we can use the Navigate component.
+
+```js
+<Route path="/" element={<Navigate replace to="/welcome" />} />
+```
+
 Whenever we want to selectively output a component when clicking a link, instead of using anchor tags, we will use **Link** and **NavLink** components.
 
 **NavLink** is the same as **Link**, but it has more features. We can add an **activeClassName** attribute to NavLink, it will add this class on that element whenever it's active (whenever we're ON THAT path). Eg:
