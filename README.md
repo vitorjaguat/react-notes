@@ -2331,6 +2331,145 @@ Working on react-recipe-directory repo (NN section 11)
 
 ### BrowserRouter, Router, Link, NavLink, Switch components
 
+**v6.4**
+
+---
+
+In react-router-dom@6.4, we can use **RouterProvider** component and **createBrowserRouter** function to define our main routes. By using the, we unlock a bunch of new features, like the **loader** prop.
+
+The **loader** prop allows us to avoid using useEffect to load fetched data when we load a component. Fetched data is retrieved inside the component by **useLoaderData** hook. By using that, the page will only load when the data's already been loaded; so we don't have to worry about loading state.
+
+In order to handle errors during fetching/loading data, we can add the prop **errorElement** to the route. We can also pass the errorElement prop to the parent route, then errors from its child routes will bubble-up to that errorElement and output it whenever needed. We can access the error object (and extract error.message) using the **useRouteError** hook in the ErrorPage component.
+
+```js
+//App.js
+import {
+  RouterProvider,
+  Route,
+  createBrowserRouter,
+  createRoutesFromElements,
+} from 'react-router-dom';
+
+import BlogLayout from './pages/BlogLayout';
+import BlogPostsPage, { loader as blogPostsLoader } from './pages/BlogPosts';
+import NewPostPage from './pages/NewPost';
+import PostDetailPage from './pages/PostDetail';
+import RootLayout from './components/RootLayout';
+import WelcomePage from './pages/Welcome';
+import ErrorPage from './pages/Error';
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route path="/" element={<RootLayout />} errorElement={<ErrorPage />}>
+      <Route index element={<WelcomePage />} />
+      <Route path="/blog" element={<BlogLayout />}>
+        <Route index element={<BlogPostsPage />} loader={blogPostsLoader} />
+        <Route
+          path=":id"
+          element={<PostDetailPage />}
+          loader={blogPostLoader}
+
+        />
+      </Route>
+      <Route path="/blog/new" element={<NewPostPage />} />
+    </Route>
+  )
+);
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+export default App;
+
+//RootLayout.js (use Outlet instead of props.children)
+import { Outlet } from 'react-router-dom';
+import MainNavigation from './MainNavigation';
+
+function RootLayout() {
+  return (
+    <>
+      <MainNavigation />
+      <main>
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+export default RootLayout;
+
+//BlogPosts.js (loading all posts)
+import { useLoaderData } from 'react-router-dom';
+
+import Posts from '../components/Posts';
+import { getPosts } from '../util/api';
+
+function BlogPostsPage() {
+  const loaderData = useLoaderData();
+
+  return (
+    <>
+      <h1>Our Blog Posts</h1>
+
+      <Posts blogPosts={loaderData} />
+    </>
+  );
+}
+
+export default BlogPostsPage;
+
+export function loader() {
+  return getPosts();
+}
+
+//PostDetails.js
+import { useLoaderData } from 'react-router-dom';
+import BlogPost from '../components/BlogPost';
+import { getPost } from '../util/api';
+
+function PostDetailPage() {
+  const postData = useLoaderData();
+
+  return (
+    <>
+      <BlogPost title={postData.title} text={postData.body} />
+    </>
+  );
+}
+
+export default PostDetailPage;
+
+export function loader({ params }) {
+  const postId = params.id;
+  return getPost(postId);
+}
+
+//Error.js (the errorElement of the parent route)
+import { useRouteError } from 'react-router';
+
+import MainNavigation from '../components/MainNavigation';
+
+function ErrorPage() {
+  const error = useRouteError();
+
+  return (
+    <>
+      <MainNavigation />
+      <main id="error-content">
+        <h1>An error occurred!</h1>
+        <p>{error.message}</p>
+      </main>
+    </>
+  );
+}
+
+export default ErrorPage;
+
+```
+
+---
+
 **v6**
 
 ---
