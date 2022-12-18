@@ -2378,6 +2378,55 @@ The Redirect component doesn't exist anymore. Instead, we can use the Navigate c
 <Route path="/" element={<Navigate replace to="/welcome" />} />
 ```
 
+In v6, Route components always have to be wrapped by Routes component, even in nested routes. Besides, in nested routes (routes that are defined outside the root route file), we set the path to the relative path.
+
+```js
+<Link to="new-user">New User</Link>
+<Routes>
+  <Route path="new-user" element={<p>Welcome, new user!</p>} />
+</Routes>
+```
+
+Nested routes can also be defined directly using this kind of syntax:
+
+```js
+//App.js
+<Route path="/welcome/*" element={<Welcome />}>
+  <Route path="new-user" element={<p>Welcome, new user!</p>} />
+</Route>;
+
+//Welcome.js
+const Welcome = () => {
+  return (
+    <section>
+      <h1>The Welcome Page</h1>
+      <Link to="new-user">New User</Link>
+      <Outlet />
+    </section>
+  );
+};
+```
+
+Imperative or programmatic navigation is used inside of an useEffect hook or when some data finished fetching.
+
+In v5, to make imperative navigation, we used to use useHistory and methods like .push('/path') and .replace('/path').
+In v6, we now use the **useNavigate** hook.
+
+```js
+const navigate = useNavigate();
+navigate('/path'); //the same as .push('/path')
+navigate('/path', { replace: true }); //the same as .replace('/path')
+navigate(-1); //go back to previous page
+```
+
+The Prompt component, used to prevent user from leaving page when filling a form, is no longer available in v6.
+
+---
+
+v5
+
+---
+
 Whenever we want to selectively output a component when clicking a link, instead of using anchor tags, we will use **Link** and **NavLink** components.
 
 **NavLink** is the same as **Link**, but it has more features. We can add an **activeClassName** attribute to NavLink, it will add this class on that element whenever it's active (whenever we're ON THAT path). Eg:
