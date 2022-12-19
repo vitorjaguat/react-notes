@@ -2335,6 +2335,8 @@ Working on react-recipe-directory repo (NN section 11)
 
 ---
 
+_repo react-max-20-router branch react-router6_4basic, Max lecture 291_
+
 In react-router-dom@6.4, we can use **RouterProvider** component and **createBrowserRouter** function to define our main routes. By using the, we unlock a bunch of new features, like the **loader** prop.
 
 The **loader** prop allows us to avoid using useEffect to load fetched data when we load a component. Fetched data is retrieved inside the component by **useLoaderData** hook. By using that, the page will only load when the data's already been loaded; so we don't have to worry about loading state.
@@ -2466,6 +2468,110 @@ function ErrorPage() {
 
 export default ErrorPage;
 
+```
+
+To submit forms in v6.4, we can use the **Form** component from react-router-dom. We will pass a method (get, post, put, delete) and an action (a path) to it.
+
+```js
+//App.jsx
+import NewPostPage, { action as newPostAction } from './pages/NewPost';
+etc etc
+<Route path="/blog/new" element={<NewPostPage />} action={newPostAction} />
+etc etc
+
+//NewPostForm.jsx
+etc etc
+<Form className={classes.form} method="post" action="/blog/new">
+etc etc input etc
+</Form>
+
+//NewPost.jsx
+import { redirect, useNavigate } from 'react-router-dom';
+
+import NewPostForm from '../components/NewPostForm';
+import { savePost } from '../util/api';
+
+function NewPostPage() {
+  const navigate = useNavigate();
+
+  function cancelHandler() {
+    navigate('/blog');
+  }
+
+  return (
+    <>
+      <NewPostForm onCancel={cancelHandler} submitting={false} />
+    </>
+  );
+}
+
+export default NewPostPage;
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const post = {
+    title: formData.get('title'), //'title' is the 'name' defined in the input element inside the Form component
+    body: formData.get('post-text'),
+  };
+  try {
+    savePost(post);
+  } catch (err) {
+    if (err.status === 422) {
+      //to be discussed
+      throw err;
+    }
+    throw err;
+  }
+  return redirect('/blog');
+}
+```
+
+By doing this, the error is handled by the errorElement in the main Route in App.js. Whenever an error is thrown by any component, the Errox.jsx function will be output. But, if we instead want to handle the error and show the error message on that same page (NewPost.jsx), we must:
+
+1. return the error, instead of throwing it.
+2. use the useActionData hook to get access to that err object.
+
+```js
+import { redirect, useNavigate, useActionData } from 'react-router-dom';
+
+import NewPostForm from '../components/NewPostForm';
+import { savePost } from '../util/api';
+
+function NewPostPage() {
+  const navigate = useNavigate();
+  const data = useActionData();
+
+  function cancelHandler() {
+    navigate('/blog');
+  }
+
+  return (
+    <>
+      {data && data.status && <p>{data.message}</p>}
+      <NewPostForm onCancel={cancelHandler} submitting={false} />
+    </>
+  );
+}
+
+export default NewPostPage;
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const post = {
+    title: formData.get('title'),
+    body: formData.get('post-text'),
+  };
+  try {
+    savePost(post);
+  } catch (err) {
+    if (err.status === 422) {
+      //handling errors on this same page -> the err object will be "catched" by useActionData
+      return err;
+    }
+    throw err;
+  }
+  return redirect('/blog');
+}
 ```
 
 ---
