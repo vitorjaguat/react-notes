@@ -2574,6 +2574,92 @@ export async function action({ request }) {
 }
 ```
 
+In order to show 'pending' or 'loading' messages, or to disable a button while sending data to the back-end, we can use the **useNavigation** hook. This hook returns an object, which contains a property called 'state'. State can be either 'idle', 'loading' or 'submitting', and it will automatically listen if actions or loaders functions are working.
+
+```js
+//NewPostForm.jsx
+etc etc
+<button disabled={submitting}>
+  {submitting ? 'Submitting...' : 'Create Post'}
+</button>
+etc etc
+
+//NewPost.jsx
+import {
+  redirect,
+  useNavigate,
+  useActionData,
+  useNavigation,
+} from 'react-router-dom';
+
+import NewPostForm from '../components/NewPostForm';
+import { savePost } from '../util/api';
+
+function NewPostPage() {
+  const navigate = useNavigate();
+  const data = useActionData();
+  const navigation = useNavigation(); //calling useNavigation hook
+
+  function cancelHandler() {
+    navigate('/blog');
+  }
+
+  return (
+    <>
+      {data && data.status && <p>{data.message}</p>}
+      <NewPostForm
+        onCancel={cancelHandler}
+        submitting={navigation.state === 'submitting'} //using the state property of navigation to conditionally show button text and to disable it while submitting
+      />
+    </>
+  );
+}
+```
+
+**v6.4 ADVANCED FEATURES** 
+*repo react-max-20-router, branch react-router6_4advanced, lecture 291 from 36min on*
+Whenever you want to load a component that shows content that takes time to load, you can use the **defer** function and the **Await** and **Suspense** components to load the page with a 'loading' state, and then, as the content is loaded (from a slow server, for example), re-render the page and show all content.
+
+```js
+//DeferredBlogPosts.jsx
+import { Suspense } from 'react';
+import { useLoaderData, defer, Await } from 'react-router-dom';
+
+import Posts from '../components/Posts';
+import { getSlowPosts } from '../util/api';
+
+function DeferredBlogPostsPage() {
+  const loaderData = useLoaderData();
+
+  return (
+    <>
+      <h1>Our Blog Posts</h1>
+      <Suspense fallback={<p>Loading...</p>}>
+        <Await
+          resolve={loaderData.posts}
+          errorElement={<p>Error loading blog posts.</p>}
+        >
+          {(loadedPosts) => <Posts blogPosts={loadedPosts} />}
+          {/* render props:  the function will be executed once the resolve prop in Await is finished */}
+        </Await>
+      </Suspense>
+    </>
+  );
+}
+
+export default DeferredBlogPostsPage;
+
+export async function loader() {
+  return defer({ posts: getSlowPosts() });
+}
+```
+
+If you want to send a form submit request and stay on the same page, you can use the **useFetch** hook to manually trigger a submit function in a form. useFetch also works for manually triggering a loader function.
+
+
+
+
+
 ---
 
 **v6**
@@ -6515,3 +6601,62 @@ const removeItem = (itemID) => {
 Our functionality is finally done. Our cart will now be persisted inside localStorage even if the user refreshes or closes the browser.
 
 Additionally, you can reset the cart from memory by calling `localStorage.removeItem(“cart”)` if your user checks out or completes a purchase.
+
+
+## Deploying
+
+### Adding Lazy Loading
+When not using Lazy Loading, once our app is loaded, all the pages and components are downloaded, even if they are inside of routes that haven't been called yet. 
+
+Use the **lazy** function and the **Suspense** component (from 'react'), we can download some components on demand.
+
+Other tools for optimizing the building process and, after that, the production, are **React.memo()** and **useCallback** [here](#reactmemo-usecallback--usememo).
+
+```js
+import React, { Suspense } from 'react';
+import { Route, Switch, Redirect } from 'react-router-dom';
+
+import AllQuotes from './pages/AllQuotes';
+import Layout from './components/layout/Layout';
+import LoadingSpinner from './components/UI/LoadingSpinner';
+
+//lazy components:
+const NewQuote = React.lazy(() => import('./pages/NewQuote'));
+const QuoteDetail = React.lazy(() => import('./pages/QuoteDetail'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
+
+function App() {
+  return (
+    <Layout>
+      // Suspense to show a loading spinner component while loading -> adding Suspense is mandatory when using lazy loading!
+      <Suspense
+        fallback={
+          <div className="centered">
+            <LoadingSpinner />
+          </div>
+        }
+      >
+        <Switch>
+          <Route path="/" exact>
+            <Redirect to="/quotes" />
+          </Route>
+          <Route path="/quotes" exact>
+            <AllQuotes />
+          </Route>
+          <Route path="/quotes/:quoteId">
+            <QuoteDetail />
+          </Route>
+          <Route path="/new-quote">
+            <NewQuote />
+          </Route>
+          <Route path="*">
+            <NotFound />
+          </Route>
+        </Switch>
+      </Suspense>
+    </Layout>
+  );
+}
+
+export default App;
+```
