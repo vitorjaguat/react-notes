@@ -2616,8 +2616,8 @@ function NewPostPage() {
 }
 ```
 
-**v6.4 ADVANCED FEATURES** 
-*repo react-max-20-router, branch react-router6_4advanced, lecture 291 from 36min on*
+**v6.4 ADVANCED FEATURES**
+_repo react-max-20-router, branch react-router6_4advanced, lecture 291 from 36min on_
 Whenever you want to load a component that shows content that takes time to load, you can use the **defer** function and the **Await** and **Suspense** components to load the page with a 'loading' state, and then, as the content is loaded (from a slow server, for example), re-render the page and show all content.
 
 ```js
@@ -2655,10 +2655,6 @@ export async function loader() {
 ```
 
 If you want to send a form submit request and stay on the same page, you can use the **useFetch** hook to manually trigger a submit function in a form. useFetch also works for manually triggering a loader function.
-
-
-
-
 
 ---
 
@@ -4801,6 +4797,8 @@ useEffect(() => {
 
 ## Firebase Authentication
 
+_repo react-finance-tracker, NN section 14_
+
 ### Connecting Firebase Auth
 
 After installing `npm install firebase@8.5` and creating a config.js file (see [here](#connecting-to-firebase)), we have to enable e-mail authentication on Firebase website.
@@ -5842,6 +5840,44 @@ export default function Home() {
 }
 ```
 
+## Firebase Auth REST Api
+
+_Max section 22, repo react-max-22-auth_
+
+Firebase Auth REST Api Docs: https://firebase.google.com/docs/reference/rest/auth
+
+Besides using the methods contained in `firebase.auth()`, such as `.createUserWithEmailAndPassword(email, password)` and `.signInWithEmailAndPassword(email, password)`, we can also do such things by sending POST and GET requests to the REST Api.
+
+### Signup
+
+The request should have this structure:
+
+```js
+fetch(
+  'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=[API_KEY]',
+  {
+    method: 'POST',
+    body: JSON.stringify({
+      email: enteredEmail,
+      password: enteredPassword,
+      returnSecureToken: true, //always true
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }
+).then((res) => {
+  if (res.ok) {
+    // redirect etc.
+  } else {
+    return res.json().then((data) => {
+      //show an error modal etc.
+      console.log(data);
+    });
+  }
+});
+```
+
 ## Firestore Rules
 
 Before deploying our app in production-mode, we have to change Firestore Rules to guarantee the security of our data.
@@ -6602,11 +6638,11 @@ Our functionality is finally done. Our cart will now be persisted inside localSt
 
 Additionally, you can reset the cart from memory by calling `localStorage.removeItem(“cart”)` if your user checks out or completes a purchase.
 
-
 ## Deploying
 
 ### Adding Lazy Loading
-When not using Lazy Loading, once our app is loaded, all the pages and components are downloaded, even if they are inside of routes that haven't been called yet. 
+
+When not using Lazy Loading, once our app is loaded, all the pages and components are downloaded, even if they are inside of routes that haven't been called yet.
 
 Use the **lazy** function and the **Suspense** component (from 'react'), we can download some components on demand.
 
@@ -6628,7 +6664,8 @@ const NotFound = React.lazy(() => import('./pages/NotFound'));
 function App() {
   return (
     <Layout>
-      // Suspense to show a loading spinner component while loading -> adding Suspense is mandatory when using lazy loading!
+      // Suspense to show a loading spinner component while loading -> adding
+      Suspense is mandatory when using lazy loading!
       <Suspense
         fallback={
           <div className="centered">
