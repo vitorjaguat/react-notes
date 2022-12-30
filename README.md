@@ -5848,6 +5848,8 @@ Firebase Auth REST Api Docs: https://firebase.google.com/docs/reference/rest/aut
 
 Besides using the methods contained in `firebase.auth()`, such as `.createUserWithEmailAndPassword(email, password)` and `.signInWithEmailAndPassword(email, password)`, we can also do such things by sending POST and GET requests to the REST Api.
 
+`firebase.auth()` gives access to what we call `Firebase Auth SDK`. SDK stands for software development kit, also known as "devkit".
+
 ### Signup
 
 The request should have this structure:
