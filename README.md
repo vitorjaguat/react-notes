@@ -5852,11 +5852,13 @@ Besides using the methods contained in `firebase.auth()`, such as `.createUserWi
 
 ### Signup
 
+The `returnSecureToken` property is important to get a tokenID (JSON web token) as part of the response. We will store the token in our auth-context to be able to More on JSON web token: https://jwt.io/introduction
+
 The request should have this structure:
 
 ```js
 fetch(
-  'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=[API_KEY]',
+  `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_key}`, //this api-key is not a secret, but better keep it quiet.
   {
     method: 'POST',
     body: JSON.stringify({
@@ -5879,6 +5881,269 @@ fetch(
   }
 });
 ```
+
+### Signup and login (shared page)
+
+It is convenient to write a single page either to signup or to login - we just have to add a button to change between these two logics.
+
+```js
+//AuthForm.js
+import { useState, useRef, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
+
+import AuthContext from '../../store/auth-context';
+import API_key from '../../env';
+
+import classes from './AuthForm.module.css';
+
+const AuthForm = () => {
+  const history = useHistory();
+  const emailInputRef = useRef();
+  const passwordInputRef = useRef();
+
+  const authCtx = useContext(AuthContext);
+
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const switchAuthModeHandler = () => {
+    setIsLogin((prevState) => !prevState);
+  };
+
+  const submitHandler = (event) => {
+    event.preventDefault();
+
+    const enteredEmail = emailInputRef.current.value;
+    const enteredPassword = passwordInputRef.current.value;
+
+    //optional: validation
+
+    setIsLoading(true);
+    let url;
+    if (isLogin) {
+      url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_key}`;
+    } else {
+      url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=
+        ${API_key}`;
+    } //just change the url depending on if login or signup, the other parameters of the fetch request are the same!
+
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: enteredEmail,
+        password: enteredPassword,
+        returnSecureToken: true,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => {
+        setIsLoading(false);
+        if (res.ok) {
+          return res.json();
+        } else { //handling errors
+          return res.json().then((data) => {
+            //show an error modal
+            let errorMessage = 'Authentication failed!';
+            if (data && data.error && data.error.message) {
+              errorMessage = data.error.message;
+            }
+
+            throw new Error(errorMessage);
+          });
+        }
+      })
+      .then((data) => {
+        authCtx.login(data.idToken); //storing the idToken for future requests (that might be protected, like change password or post content, for example)
+        history.replace('/'); //redirecting
+      })
+      .catch((err) => {
+        alert(err.message); //error feedback
+      });
+  };
+
+  return (
+    <section className={classes.auth}>
+      <h1>{isLogin ? 'Login' : 'Sign Up'}</h1>
+      <form onSubmit={submitHandler}>
+        <div className={classes.control}>
+          <label htmlFor="email">Your Email</label>
+          <input type="email" id="email" ref={emailInputRef} required />
+        </div>
+        <div className={classes.control}>
+          <label htmlFor="password">Your Password</label>
+          <input
+            type="password"
+            id="password"
+            ref={passwordInputRef}
+            required
+          />
+        </div>
+        <div className={classes.actions}>
+          {!isLoading && (
+            <button>{isLogin ? 'Login' : 'Create Account'}</button>
+          )}
+          {isLoading && <p>Sending request...</p>}
+          <button
+            type="button"
+            className={classes.toggle}
+            onClick={switchAuthModeHandler}
+          >
+            {isLogin ? 'Create new account' : 'Login with existing account'}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+};
+
+export default AuthForm;
+
+//auth-context.js
+import React, { useState } from 'react';
+
+const AuthContext = React.createContext({
+  token: '',
+  isLoggedIn: false,
+  login: (token) => {},
+  logout: () => {},
+});
+
+export const AuthContextProvider = (props) => {
+  const [token, setToken] = useState(null);
+
+  const userIsLoggedIn = !!token; //if token is truthy, it'll return true; if token is falsy, it'll return false.
+
+  const loginHandler = (token) => {
+    setToken(token);
+  };
+
+  const logoutHandler = () => {
+    setToken(null);
+  };
+
+  const contextValue = {
+    token: token,
+    isLoggedIn: userIsLoggedIn,
+    login: loginHandler,
+    logout: logoutHandler,
+  };
+
+  return ( //this component will wrap the entire app in index.js (or App.js)
+    <AuthContext.Provider value={contextValue}>
+      {props.children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthContext;
+
+```
+
+### Logout
+
+Just tap authCtx and call the logout function that we've created (see auth-context.js above).
+
+```js
+import { useContext } from 'react';
+import { Link } from 'react-router-dom';
+import AuthContext from '../../store/auth-context';
+
+import classes from './MainNavigation.module.css';
+
+const MainNavigation = () => {
+  const authCtx = useContext(AuthContext);
+
+  const logoutHandler = () => {
+    authCtx.logout();
+    //optional: redirect user to '/'
+  };
+
+  return (
+    <header className={classes.header}>
+      <Link to="/">
+        <div className={classes.logo}>React Auth</div>
+      </Link>
+      <nav>
+        <ul>
+          {!authCtx.isLoggedIn && (
+            <li>
+              <Link to="/auth">Login</Link>
+            </li>
+          )}
+          {authCtx.isLoggedIn && (
+            <li>
+              <Link to="/profile">Profile</Link>
+            </li>
+          )}
+          {authCtx.isLoggedIn && (
+            <li>
+              <button onClick={logoutHandler}>Logout</button>
+            </li>
+          )}
+        </ul>
+      </nav>
+    </header>
+  );
+};
+
+export default MainNavigation;
+```
+
+### Protecting routes
+
+It's a good practice to protect routes if user isn`t logged in, so that a malevolous user can't access them via url. This is made simply by adding conditionals to the Router in App.js.
+
+```js
+import { useContext } from 'react';
+import { Switch, Route, Redirect } from 'react-router-dom';
+
+import Layout from './components/Layout/Layout';
+import UserProfile from './components/Profile/UserProfile';
+import AuthPage from './pages/AuthPage';
+import HomePage from './pages/HomePage';
+import AuthContext from './store/auth-context';
+
+function App() {
+  const authCtx = useContext(AuthContext);
+
+  return (
+    <Layout>
+      <Switch>
+        <Route path="/" exact>
+          <HomePage />
+        </Route>
+        {!authCtx.isLoggedIn && (
+          <Route path="/auth">
+            <AuthPage />
+          </Route>
+        )}
+        {authCtx.isLoggedIn && (
+          <Route path="/profile">
+            <UserProfile />
+          </Route>
+        )}
+        <Route path="*">
+          <Redirect to="/" />
+        </Route>
+      </Switch>
+    </Layout>
+  );
+}
+
+export default App;
+```
+
+### Persisting the user authentication status
+
+To persist auth status data even if the user leaves/refreshes the page, we can use **localStorage** or **cookies**.
+
+IMPORTANT! Protect user's idToken from XSS attacks.
+
+- About XSS attacks: https://academind.com/tutorials/xss-cross-site-scripting-attacks
+- Neither localStorage, or session cookies, or http-only cookies are all subject to XSS atacks: https://academind.com/tutorials/localstorage-vs-cookies-xss
+- Sanitize package (JS/Node.js) to efficiently prevent XSS injection: https://www.npmjs.com/package/sanitize-html
 
 ## Firestore Rules
 
