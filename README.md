@@ -6139,11 +6139,88 @@ export default App;
 
 To persist auth status data even if the user leaves/refreshes the page, we can use **localStorage** or **cookies**.
 
-IMPORTANT! Protect user's idToken from XSS attacks.
+```js
+import React, { useState } from 'react';
+
+const AuthContext = React.createContext({
+  token: '',
+  isLoggedIn: false,
+  login: (token) => {},
+  logout: () => {},
+});
+
+export const AuthContextProvider = (props) => {
+  const initialToken = localStorage.getItem('token'); //we don't need to use useEffect here; localStorage is a synchronous API, so it won't cause a loop.
+  const [token, setToken] = useState(initialToken); //the initial value of the token state is the token that is stored in localStorage (this can be undefined too)
+
+  const userIsLoggedIn = !!token;
+
+  const loginHandler = (token) => {
+    setToken(token);
+    localStorage.setItem('token', token);
+  };
+
+  const logoutHandler = () => {
+    setToken(null);
+    localStorage.removeItem('token');
+  };
+
+  const contextValue = {
+    token: token,
+    isLoggedIn: userIsLoggedIn,
+    login: loginHandler,
+    logout: logoutHandler,
+  };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {props.children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthContext;
+```
+
+### Auto-logout (setting an expiration time for the token)
+
+It is very useful to automatically logout the user after a certain period of time after login/signup.
+Most APIs (Firebase Auth REST Api included) include an expiresIn property in the response for a POST request.
+Here we will use the default value of that property to logout the user after that time. By default, Firebase REST Api will return this expiresIn property in seconds, so we have to convert it to miliseconds and compare it to the current time using a helper function, calculateRemainingTime(expirationTime).
+
+```js
+
+```
+
+These two snippets from AuthForm.js and auth-context.js ...
+
+```js
+const expirationTime = new Date(new Date().getTime() + +data.expiresIn * 1000);
+authCtx.login(data.idToken, expirationTime.toISOString());
+
+const calculateRemainingTime = (expirationTime) => {
+  const currentTime = new Date().getTime();
+  const adjExpirationTime = new Date(expirationTime).getTime();
+  const remainingDuration = adjExpirationTime - currentTime;
+  return remainingDuration;
+};
+```
+
+... can be replaced with these two (easy-to-read) lines:
+
+```js
+authCtx.login(data.idToken, Date.now() + data.expiresIn * 1000);
+
+const calculateRemainingTime = (expirationTime) => expirationTime - Date.now();
+```
+
+`Date.now()` does the same as `new Date().getTime()`. It's even a little more precise (which is not relevant here), since it captures the time immediately, not only after creating a Date object first.
+
+#### IMPORTANT! Protect user's idToken from XSS attacks.
 
 - About XSS attacks: https://academind.com/tutorials/xss-cross-site-scripting-attacks
 - Neither localStorage, or session cookies, or http-only cookies are all subject to XSS atacks: https://academind.com/tutorials/localstorage-vs-cookies-xss
-- Sanitize package (JS/Node.js) to efficiently prevent XSS injection: https://www.npmjs.com/package/sanitize-html
+- Sanitize package (JS/Node.js) to efficiently prevent XSS injection before storing it in the server: https://www.npmjs.com/package/sanitize-html
 
 ## Firestore Rules
 
