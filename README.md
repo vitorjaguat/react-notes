@@ -6189,6 +6189,178 @@ Most APIs (Firebase Auth REST Api included) include an expiresIn property in the
 Here we will use the default value of that property to logout the user after that time. By default, Firebase REST Api will return this expiresIn property in seconds, so we have to convert it to miliseconds and compare it to the current time using a helper function, calculateRemainingTime(expirationTime).
 
 ```js
+//AuthForm.js
+import { useState, useRef, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
+
+import AuthContext from '../../store/auth-context';
+import API_key from '../../env';
+
+import classes from './AuthForm.module.css';
+
+const AuthForm = () => {
+  const history = useHistory();
+  const emailInputRef = useRef();
+  const passwordInputRef = useRef();
+
+  const authCtx = useContext(AuthContext);
+
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const switchAuthModeHandler = () => {
+    setIsLogin((prevState) => !prevState);
+  };
+
+  const submitHandler = (event) => {
+    event.preventDefault();
+
+    const enteredEmail = emailInputRef.current.value;
+    const enteredPassword = passwordInputRef.current.value;
+
+    //optional: validation
+
+    setIsLoading(true);
+    let url;
+    if (isLogin) {
+      url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_key}`;
+    } else {
+      url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=
+        ${API_key}`;
+    }
+
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: enteredEmail,
+        password: enteredPassword,
+        returnSecureToken: true,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => {
+        setIsLoading(false);
+        if (res.ok) {
+          return res.json();
+        } else {
+          return res.json().then((data) => {
+            //show an error modal
+            let errorMessage = 'Authentication failed!';
+            if (data && data.error && data.error.message) {
+              errorMessage = data.error.message;
+            }
+
+            throw new Error(errorMessage);
+          });
+        }
+      })
+      .then((data) => {
+        const expirationTime = new Date(
+          new Date().getTime() + +data.expiresIn * 1000
+        ); //creating the expirationTime (must convert expiresIn (which is in seconds) to miliseconds)
+
+        authCtx.login(data.idToken, expirationTime.toISOString()); //pass the expirationTime as a string (because we are already creating a Date object in the login function in auth-context.js)
+        history.replace('/');
+      })
+      .catch((err) => {
+        alert(err.message);
+      });
+  };
+
+  return (
+    <section className={classes.auth}>
+      <h1>{isLogin ? 'Login' : 'Sign Up'}</h1>
+      <form onSubmit={submitHandler}>
+        <div className={classes.control}>
+          <label htmlFor="email">Your Email</label>
+          <input type="email" id="email" ref={emailInputRef} required />
+        </div>
+        <div className={classes.control}>
+          <label htmlFor="password">Your Password</label>
+          <input
+            type="password"
+            id="password"
+            ref={passwordInputRef}
+            required
+          />
+        </div>
+        <div className={classes.actions}>
+          {!isLoading && (
+            <button>{isLogin ? 'Login' : 'Create Account'}</button>
+          )}
+          {isLoading && <p>Sending request...</p>}
+          <button
+            type="button"
+            className={classes.toggle}
+            onClick={switchAuthModeHandler}
+          >
+            {isLogin ? 'Create new account' : 'Login with existing account'}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+};
+
+export default AuthForm;
+
+//auth-context.js
+import React, { useState } from 'react';
+
+const AuthContext = React.createContext({
+  token: '',
+  isLoggedIn: false,
+  login: (token) => {},
+  logout: () => {},
+});
+
+//helper function to set duration of storage of token in localStorage:
+const calculateRemainingTime = (expirationTime) => {
+  const currentTime = new Date().getTime(); //get the current timestamp in miliseconds
+  const adjustedExpTime = new Date(expirationTime).getTime(); //convert expirationTime to miliseconds
+
+  const remainingDuration = adjustedExpTime - currentTime;
+
+  return remainingDuration;
+};
+
+export const AuthContextProvider = (props) => {
+  const initialToken = localStorage.getItem('token'); //we don't need to use useEffect here; localStorage is a synchronous API, so it won't cause a loop.
+  const [token, setToken] = useState(initialToken); //the initial value of the token state is the token that is stored in localStorage (this can be undefined too)
+
+  const userIsLoggedIn = !!token; //if token is truthy, it'll return true; if token is falsy, it'll return false.
+
+  const logoutHandler = () => {
+    setToken(null);
+    localStorage.removeItem('token');
+  };
+
+  const loginHandler = (token, expirationTime) => {
+    setToken(token);
+    localStorage.setItem('token', token);
+
+    const remainingTime = calculateRemainingTime(expirationTime);
+
+    setTimeout(logoutHandler, remainingTime);
+  };
+
+  const contextValue = {
+    token: token,
+    isLoggedIn: userIsLoggedIn,
+    login: loginHandler,
+    logout: logoutHandler,
+  };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {props.children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthContext;
 
 ```
 
