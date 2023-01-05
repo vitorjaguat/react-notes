@@ -6511,6 +6511,7 @@ We can edit and publich the rules directly on the Firebase website, but is prefe
 4. Follow steps: NN lecture 143
 
 5. Firebase init will create a bunch of files inside our project's directory. One of these is `firebase.rules`, which we will edit now:
+   (NN lecture 144)
 
 ```js
 //firebase.rules
@@ -6523,7 +6524,7 @@ service cloud.firestore {
       // allow read, create, delete, update;
 
       allow create: if request.auth != null;
-      // if there is an auth token, user can create a new document
+      // if there is an auth token, user can create a new document. request.auth is valid for all projects;
 
       allow read, delete: if request.auth.uid == resource.data.uid;
       //if the uid of the request matches the uid of the resource we want to access
