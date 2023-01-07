@@ -7412,6 +7412,17 @@ Commit the changes you made while you were following this tutorial, to the maste
 
 I recommend exploring the GitHub repository at this point. It will have two branches: master and gh-pages. The `master branch` will contain the React app's source code, while the `gh-pages branch` will contain the distributable version of the React app.
 
-## Frame Motion for React Animations
+## Next.js
 
+What is Next.js?
+
+- "The React framework for production"
+- A **fullstack** framework for React
+
+## React Animations
+
+Frame Motion (by Net Ninja)
 https://www.youtube.com/playlist?list=PL4cUxeGkcC9iHDnQfTHEVVceOEBsOf07i
+
+React Spring (by Brad Traversy)
+https://www.youtube.com/watch?v=S8yn3-WpVV8&ab_channel=TraversyMedia
