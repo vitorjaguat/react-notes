@@ -7417,7 +7417,40 @@ I recommend exploring the GitHub repository at this point. It will have two bran
 What is Next.js?
 
 - "The React framework for production"
-- A **fullstack** framework for React
+- A **fullstack** framework for React: that means, it builds up on React, and it makes building large-scale React apps easier.
+
+## Next.js' key-features:
+
+1. Server-side rendering
+
+In React apps, typically, the page is loaded on the fly: when a user clicks to open a post, for example, the data is loaded and the page is "mounted" on the fly. The Search Engine Crawlers are unable to be aware of our page's content.
+
+Server-side rendering allows us to pre-render React pages and components on a server. thus solving the above mentioned problem. Another advantage of server-side rendering is that it avoids flickering and "loading..." states as we first load a page.
+
+2. File-based Routing
+
+With React Router, we define routes by using code. With Next.js, we define pages and routes with files and folders instead of code.
+
+This implies less code, less work and highly understandable and readable structure.
+
+3. Fullstack capabilities
+
+- easily add backend (server-side) code to your apps
+- storing data, getting data, authentication etc. can be added to your React projects
+
+## Creating a Next.js app
+
+`npx create-next-app`
+
+This will give us a structure containing the folders node_modules, styles, public, pages, etc. The most important folder in a Next.js app is `pages`.
+
+The pages folder contains an index.js file. This file exports a React component that will be rendered whenever the user reaches `our-domain.com/` path.
+
+A file named `news.js` in the pages folder will be rendered whenever the user reaches `our-domain.com/news` path.
+
+A folder created inside of the pages folder also will have its index.js rendered whenever the user reaches `our-domain.com/foldername` path.
+
+This is how the routing works in a Next.js app.
 
 ## React Animations
 
