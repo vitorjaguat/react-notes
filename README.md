@@ -7414,6 +7414,8 @@ I recommend exploring the GitHub repository at this point. It will have two bran
 
 ## Next.js
 
+_repo react-max-23-nextjs, lecture 318_
+
 What is Next.js?
 
 - "The React framework for production"
@@ -7426,6 +7428,8 @@ What is Next.js?
 In React apps, typically, the page is loaded on the fly: when a user clicks to open a post, for example, the data is loaded and the page is "mounted" on the fly. The Search Engine Crawlers are unable to be aware of our page's content.
 
 Server-side rendering allows us to pre-render React pages and components on a server. thus solving the above mentioned problem. Another advantage of server-side rendering is that it avoids flickering and "loading..." states as we first load a page.
+
+More about the difference between plain React and Next.js regarding SSR: https://www.imaginarycloud.com/blog/next-js-vs-react/
 
 2. File-based Routing
 
@@ -7448,9 +7452,103 @@ The pages folder contains an index.js file. This file exports a React component 
 
 A file named `news.js` in the pages folder will be rendered whenever the user reaches `our-domain.com/news` path.
 
-A folder created inside of the pages folder also will have its index.js rendered whenever the user reaches `our-domain.com/foldername` path.
+A folder created inside of the pages folder also will have its index.js rendered whenever the user reaches `our-domain.com/foldername` path. This approach is important if we want to create nested routes, like `our-domain.com/news/sport` for example.
 
 This is how the routing works in a Next.js app.
+
+### Dynamic pages (with parameters)
+
+To create dynamic pages, that serve like a template to render different content, we will name that file using square brackets: `pages/news/[newsId].js`. This file will be rendered whenever reaches a path like `our-domain.com/news/something`.
+
+To get the value of 'something', we will use a custom hook, which is built-in inside of `next/router`: `useRouter`.
+
+```js
+//[newsId].js
+//ourdomain.com/news/something will render this page.
+
+import { useRouter } from 'next/router';
+
+function DetailPage() {
+  const router = useRouter();
+
+  const newsId = router.query.newsId;
+
+  //send a request to the backend API
+  // to fetch the news data with that Id
+
+  return <h1>The Detail Page</h1>;
+}
+
+export default DetailPage;
+```
+
+### Linking between pages
+
+In order to link between pages (inside a navbar for example), we can use the Link component imported from `next/link`.
+
+While React's Link component takes a `to=` prop, the Next.js Link component takes a `href=` prop.
+
+```js
+<Link href="/news/bolsonaristas-cagam-na-cadeira-do-xandao">
+  Bolsonaristas cagam na cadeira do Xandão
+</Link>
+```
+
+Navbar:
+_repo react-max-23-nexjs2_
+
+```js
+//components/MainNavigation.js
+import classes from './MainNavigation.module.css';
+import Link from 'next/link';
+
+function MainNavigation() {
+  return (
+    <header className={classes.header}>
+      <div className={classes.logo}>React Meetups</div>
+      <nav>
+        <ul>
+          <li>
+            <Link href="/">All Meetups</Link>
+          </li>
+          <li>
+            <Link href="/new-meetup">Add New Meetup</Link>
+          </li>
+        </ul>
+      </nav>
+    </header>
+  );
+}
+
+export default MainNavigation;
+```
+
+### The \_app.js file
+
+In Next.js apps, the `_app.js` file is a special file. It must be placed in the pages folder of our app. It serves like a root component, that will wrap every single page inside our app.
+
+Inside \_app.js, `Component` and `pageProps` are standard objects, that will contain the components rendered inside of MyApp component, and the props of that component.
+
+```js
+import Layout from '../components/layout/Layout';
+import '../styles/globals.css';
+
+function MyApp({ Component, pageProps }) {
+  return (
+    <Layout>
+      <Component {...pageProps} />
+    </Layout>
+  );
+}
+
+export default MyApp;
+```
+
+### Programatic navigation (redirect)
+
+The next/router hook `useRouter` has a method `push('/path')` that allows us to navigate programatically to that path, ie, redirect the user to that path.
+
+###
 
 ## React Animations
 
