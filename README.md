@@ -7548,7 +7548,178 @@ export default MyApp;
 
 The next/router hook `useRouter` has a method `push('/path')` that allows us to navigate programatically to that path, ie, redirect the user to that path.
 
-###
+```js
+import { useRouter } from 'next/router';
+
+etc etc
+const router = useRouter();
+router.push('/');
+etc etc
+```
+
+### getStaticProps(): serving pre-rendered pages
+
+Whenever we are creating a static website, the source code will appear without the data fetched from an API, if we use plain React. This is bad for search-engine-crawlers.
+
+However, in Next.js, we have two forms of pre-rendering:
+
+1. Static Site Generation (SSG): good for static websites
+2. Server-side Rendering
+
+In a static website, we can configure the app to serve pages that are pre-rendered via static generation. We do that by exporting the async function `getStaticProps()` in our pages.
+
+The code that will run in that function (usually fetching data and handling this data) will only run during the `building process` of our pages, ie, this code won`t be stored in our client-side app.
+
+`getStaticProps()` must return an object that contains a props object. That props object will be the props of that particular page.
+
+Alternatively, a plain React app would use useEffect withou dependencies to fetch the data from a server. But this would result in an 'empty' source code, not good for search-engine purposes.
+
+```js
+export default function HomePage(props) {
+  return <MeetupList meetups={props.meetups} />;
+}
+
+export async function getStaticProps() {
+  //this code will only run on the build process
+  //this code will never appear on the client-side
+
+  //fetch data from an API
+
+  return {
+    props: {
+      meetups: DUMMY_MEETUPS, //these properties are received by the page component as its own props
+    },
+    revalidate: 10, //this SSG-page will be re-generated every 10s on the server (if the page receives requests)
+  };
+}
+```
+
+**revalidate** property: without this property, the page is built as a SSG-page on the build process, but stays the same after that. If, for example, the API receives new POST requests, the website will remain outdated. The **revalidate** property, inside the object returned by `getStaticProps()`, solves this problem. The number set as its value is the period of time (in seconds) in which our page will be re-generated (inside the server), at least when this page receives new requests.
+
+#### getStaticPaths(): working with params for SSG data fetching
+
+When working with params (dynamic pages like \[itemId\].js), we can extract the requested param using the `context.params` property. In order to do that, we have to pass the context object to the getStaticProps() function:
+
+```js
+export async function getStaticProps(context) {
+  //fetch data for a single meetup
+
+  const { meetupId } = context.params; //requested param!
+
+  return {
+    props: {
+      meetupData: {
+        image: , //this data can be added after we fetch data and filter the response using params
+        id: ,
+        title: ,
+        address: ,
+        description:
+      }
+    }
+  }
+}
+```
+
+When working with params, besides `getStaticProps()` we also must export another function in our page component: `getStaticPaths()`.
+
+getStaticPaths() must return an object with two properties:
+
+- fallback: if false, the paths object contains all possible params and ids; if true, it can generate missing ones on the fly.
+- paths: \[array\] contains one property:
+  - params: {object} contains one property:
+    - paramName: eg, meetupId, contains one property:
+      - pathName: eg, 'm1', the path that identifies the data to be fetched.
+
+(it's easier to see the example:)
+
+```js
+export async function getStaticPaths() {
+  return {
+    fallback: false, //if false, the paths object contains all possible params and ids; if true, it can generate missing ones on the fly.
+    paths: [
+      {
+        params: {
+          meetupId: 'm1',
+        },
+      },
+      {
+        params: {
+          meetupId: 'm2',
+        }, //later on, we're going to fetch all meetupIds from the server, so that we don't need to hard code every single one.
+      },
+    ],
+  };
+}
+```
+
+### getServerSideProps() and Server-side rendering (SSR)
+
+If we can't get satisfied updating our pre-rendered page only when building or every X seconds, we can then export `getServerSideProps()`. This function will only run on the server every time a request for that page is made.
+
+The disadvantage of getServerSideProps() is that it can take longer than getStaticProps(), as we have to wait for the server to generate the page everytime we load it.
+
+getServerSideProps() also offers access to the `req` and `res` objects, which come as properties of the `context` parameter. This can be useful for authentication middlewares to handle session data, etc.
+
+```js
+export async function getServerSideProps(context) {
+  const req = context.req;
+  const res = context.res;
+
+  //fetch data from an API, etc.
+
+  return {
+    props: {
+      meetups: DUMMY_MEETUPS,
+    },
+  };
+}
+```
+
+### API Routes
+
+return to [here](#getstaticpaths-working-with-params-for-ssg-data-fetching) to complete and add link there
+
+Next.js offers the possibility to add code to create a complete API, inside of our project, thus allowing us to build a fullstack application.
+
+1. Create an `api` folder inside of `pages` folder. All the code written here will not be served in the client-side, only in the server-side, thus it's possible to add credentials like api-keys here.
+2. Create a .js file with the same name as the page that will call the functions in there.
+3. On the browser, set up a MongoDB Atlas cluster and click 'connect'.
+4. npm install the official MongoDB driver via Terminal: `npm i mongo`.
+5. Write the code in our /api/new-meetup.js file:
+
+```js
+// pages/api/new-meetup.js
+// when a request is sent to /api/new-meetup, Next.js will trigger this function:
+
+import { MongoClient } from 'mongodb';
+
+async function handler(req, res) {
+  if (req.method === 'POST') {
+    const data = req.body; //getting the req.body, which will contain the form data (title, image, address, description)
+
+    const { title, image, address, description } = data;
+
+    //handle errors would be good!
+
+    const client = await MongoClient.connect(
+      'mongodb+srv://<username>:<password>@react-nextjs.2wgcrxv.mongodb.net/meetups-db?retryWrites=true&w=majority'
+    ); //add username and password where needed; the name 'meetups-db' after 'mongodb.net/' is the name of our db, it'll be created on the fly as we use it.
+    const db = client.db;
+
+    const meetupsCollection = db.collection('meetups'); //this is the name if your collection inside 'meetups-db' database.
+
+    const result = await meetupsCollection.insertOne(data); //inserting new document into the collection.
+
+    console.log(result);
+
+    client.close(); //closing the connection;
+
+    res.status(201).json({ message: 'Meetup inserted!' }); // giving a response with a custom message.
+  }
+}
+
+export default handler;
+```
 
 ## React Animations
 
