@@ -7823,7 +7823,142 @@ export async function getStaticPaths() {
 etc etc
 ```
 
-2.
+2. Fetch one single document from the database using getStaticProps() and pass it through props to the component.
+
+```js
+// pages/[meetupId]/index.js
+import { MongoClient, ObjectId } from 'mongodb';
+import MeetupDetail from '../../components/meetups/MeetupDetail';
+
+export default function MeetupDetails(props) {
+  return (
+    <MeetupDetail
+      image={props.meetupData.image}
+      title={props.meetupData.title}
+      address={props.meetupData.address}
+      description={props.meetupData.description}
+      id={props.meetupData.id}
+    />
+  );
+}
+
+export async function getStaticPaths() {
+  see above
+}
+
+export async function getStaticProps(context) {
+  // getting the param from the context object:
+  const { meetupId } = context.params; //
+
+  //fetch data for a single meetup:
+  const client = await MongoClient.connect(
+    'mongodb+srv://jaguat:2rfcofge@react-nextjs.2wgcrxv.mongodb.net/meetups-db?retryWrites=true&w=majority'
+  );
+  const db = client.db('meetups-db');
+  const meetupsCollection = db.collection('meetups');
+
+  const selectedMeetup = await meetupsCollection.findOne({
+    _id: ObjectId(meetupId),
+  }); // don't forget to import { ObjectId } from 'mongodb'!
+
+  client.close();
+
+  return {
+    props: {
+      meetupData: {
+        id: selectedMeetup._id.toString(), //converting ObjectId to a string.
+        title: selectedMeetup.title,
+        address: selectedMeetup.address,
+        description: selectedMeetup.description,
+        image: selectedMeetup.image,
+      },
+    },
+  };
+}
+```
+
+## Adding head with title and description
+
+HTML head tag contains metadata about our website, like title and description. This metadata will provide search engines with information about our website.
+
+We can add this information using the Head component provided by 'next/head'.
+
+```js
+// /pages/index.js
+import Head from 'next/head';
+import MeetupList from '../components/meetups/MeetupList';
+
+export default function HomePage(props) {
+  return (
+    <>
+      <Head>
+        <title>Meetups</title>
+        <meta
+          name="description"
+          content="Your website to create meetups all around the world"
+        />
+      </Head>
+      <MeetupList meetups={props.meetups} />
+    </>
+  );
+}
+
+etc etc
+```
+
+We can add the Head component in all page components. Alternatively, we can add a single Head component inside the \_app.js root component. Then, all pages will have the same metadata:
+
+```js
+// pages/_app.js
+import Head from 'next/head';
+import Layout from '../components/layout/Layout';
+import '../styles/globals.css';
+
+function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Head>
+        <title>Meetups</title>
+        <meta
+          name="description"
+          content="Your website to create meetups all around the world"
+        />
+      </Head>
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
+    </>
+  );
+}
+
+export default MyApp;
+```
+
+We can also add dynamic values inside the Head component's tags. This is especially useful in dynamic pages (templates that use params), for example, pages that contain details about items on a list:
+
+```js
+import Head from 'next/head';
+import MeetupDetail from '../../components/meetups/MeetupDetail';
+
+export default function MeetupDetails(props) {
+  return (
+    <>
+      <Head>
+        <title>{props.meetupData.title}</title>
+      </Head>
+      <MeetupDetail
+        image={props.meetupData.image}
+        title={props.meetupData.title}
+        address={props.meetupData.address}
+        description={props.meetupData.description}
+        id={props.meetupData.id}
+      />
+    </>
+  );
+}
+
+etc etc
+```
 
 ## React Animations
 
