@@ -7793,9 +7793,37 @@ export async function getStaticProps() {
     revalidate: 10,
   };
 }
+```
 
+**SECOND CASE: getting one document and preparing a dynamic-path rendering**
 
+1. First, we need to generate our array of paths in `getStaticPaths()` on the \[meetupId\].js page dynamically. We can do it by getting an array of all \_id's from our documents in our MongoDB collection. Then, we map this array to create the array of paths that must be returned:
 
+```js
+// pages/[meetupId]/index.js
+etc etc
+export async function getStaticPaths() {
+  const client = await MongoClient.connect(
+    'mongodb+srv://jaguat:2rfcofge@react-nextjs.2wgcrxv.mongodb.net/meetups-db?retryWrites=true&w=majority'
+  );
+  const db = client.db('meetups-db');
+  const meetupsCollection = db.collection('meetups');
+
+  const meetups = await meetupsCollection.find({}, { _id: 1 }).toArray(); //get only the _id of each document and put them into an array.
+
+  client.close()
+
+  return {
+    fallback: false, //if false, the paths object contains all possible params and ids; if true, it can generate missing ones on the fly.
+    paths: meetups.map((meetup) => ({
+      params: { meetupId: meetup._id.toString() },
+    })) //generate our array of paths dynamically.
+  };
+}
+etc etc
+```
+
+2.
 
 ## React Animations
 
@@ -7804,4 +7832,7 @@ https://www.youtube.com/playlist?list=PL4cUxeGkcC9iHDnQfTHEVVceOEBsOf07i
 
 React Spring (by Brad Traversy)
 https://www.youtube.com/watch?v=S8yn3-WpVV8&ab_channel=TraversyMedia
+
+```
+
 ```
