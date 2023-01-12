@@ -7877,7 +7877,7 @@ export async function getStaticProps(context) {
 }
 ```
 
-## Adding head with title and description
+### Adding head with title and description
 
 HTML head tag contains metadata about our website, like title and description. This metadata will provide search engines with information about our website.
 
@@ -7959,6 +7959,49 @@ export default function MeetupDetails(props) {
 
 etc etc
 ```
+
+### Deploying Next.js projects
+
+Next.js was created by the Vercel team, then this hosting service is optimized for hosting Next.js projects. We just have to import our GitHub repo to Vercel, and it will run build and build our compiled files for us.
+
+As our project contains credentials, it is better to make the GitHub repo private, then link it to Vercel. About environmental variables, see below.
+
+#### Updating dependencies
+
+Sometimes our project was written with dependencies that are not uptodate to current Vercel standards, so maybe we should update them in our project before deployment, by running `npm install next@12 react@18 react-dom@18 --force`.
+
+Sometimes you also have to follow these steps:
+
+First remove all node moudle folder and packge-lock.json, then change the `package.json` (see below) and `npm i` again, then finally Vercel deploy will work:
+
+```js
+ {
+  "name": "nextjs-course",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "mongodb": "^3.6.4",
+    "next": "12.1.4",
+    "react": "17.0.2",
+    "react-dom": "17.0.2"
+  }
+}
+```
+
+#### Environment variables
+
+In this section, Max hides the password by keeping the Git repository private. I wanted to make my repository public, so I added an environment variable `MY_ENVIRONMENT_VARIABLE` on the Vercel project page and set it to `<the MongoDB connect string>`. This value is a string, but you should NOT write it between '' in Vercel. Just the content itself.
+
+Then I referred to process.env.`MY_ENVIRONMENT_VARIABLE` in the MongoClient.connect function. This way the string with the password wasn't exposed in the git repository.
+
+To use the variable locally, I created a `.env` file and set `MY_ENVIRONMENT_VARIABLE='<the MongoDB connect string>'`. Restarted the dev server and it worked. Here you should use ''.
+
+Also remember to add `.env` to `.gitignore`. Now we can push our code to GH as a public repo.
 
 ## React Animations
 
