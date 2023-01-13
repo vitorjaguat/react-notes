@@ -8021,4 +8021,4 @@ https://www.youtube.com/watch?v=S8yn3-WpVV8&ab_channel=TraversyMedia
 
 ## Links
 
-Migreting from a React App to a Next.js app: https://nextjs.org/docs/migrating/from-create-react-app
+Migrating from a React App to a Next.js app: https://nextjs.org/docs/migrating/from-create-react-app
