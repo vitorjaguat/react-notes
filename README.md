@@ -8022,3 +8022,68 @@ https://www.youtube.com/watch?v=S8yn3-WpVV8&ab_channel=TraversyMedia
 ## Links
 
 Migrating from a React App to a Next.js app: https://nextjs.org/docs/migrating/from-create-react-app
+
+## React App Pathway
+
+\*based on NN section 17
+
+1. Get initial files (from Create React App or another tool).
+
+2. "Clean-up" the initial files.
+
+3. Define global css file, like `index.css` next to `index.js`.
+
+4. Set-up Firebase: create a new project, create a Firestore Database and Authentication for email/password. Add a new web-app to your project. Copy the config object from that web-app settings.
+
+5. Create a folder `firebase` inside of `src` with a file called `config.js`:
+
+```js
+// src/firestore/config.js
+import firebase from 'firebase/app';
+import 'firebase/firestore';
+import 'firebase/auth';
+
+//copy this object from your web-app settings in Firestore console:
+const firebaseConfig = {
+  apiKey: 'AIzaSyBoGzpEv3rXzBHMWrwIM_U2rzM9ansHGJA',
+  authDomain: 'thedojosite-cf361.firebaseapp.com',
+  projectId: 'thedojosite-cf361',
+  storageBucket: 'thedojosite-cf361.appspot.com',
+  messagingSenderId: '673918625748',
+  appId: '1:673918625748:web:058c1c131b5bcaebacd841',
+};
+
+//initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+//initialize services
+const projectFirestore = firebase.firestore();
+const projectAuth = firebase.auth();
+
+//timestamp
+const timestamp = firebase.firestore.Timestamp;
+
+export { projectFirestore, projectAuth, timestamp };
+```
+
+6. `npm i firebase` and initialize Firebase on the project `firebase init`. Enable Firebase, Hosting (1st option) and Storage. If error: go into Firebase project settings and set "Default GCP resource location". Just click on the pen and then "done".
+
+What do you want to use as your public dire
+ctory? (public) build
+
+Configure as a single-page app (rewrite all urls to /index.html)? (y/N) y
+
+Set up automatic builds and deploys with Gi
+tHub? (y/N) N
+
+(the rest goes with default, just hit Enter)
+
+Now we have the files for rules, indexes and storage.rules in our project.
+
+7. We can use the hooks and auth-context that we created in another project. They're inside this same repo :)
+
+8.
+
+9.
+
+10.
