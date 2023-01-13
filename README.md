@@ -7624,7 +7624,7 @@ When working with params, besides `getStaticProps()` we also must export another
 
 getStaticPaths() must return an object with two properties:
 
-- fallback: if false, the paths object contains all possible params and ids; if true, it can generate missing ones on the fly.
+- fallback: if false, the paths object contains all possible params and ids; if true or 'blocking', it can generate missing ones on the fly.
 - paths: \[array\] contains one property:
   - params: {object} contains one property:
     - paramName: eg, meetupId, contains one property:
@@ -7635,7 +7635,7 @@ getStaticPaths() must return an object with two properties:
 ```js
 export async function getStaticPaths() {
   return {
-    fallback: false, //if false, the paths object contains all possible params and ids; if true, it can generate missing ones on the fly.
+    fallback: 'blocking', //if false, the paths object contains all possible params and ids; if true or 'blocking', it can generate missing ones on the fly.
     paths: [
       {
         params: {
@@ -7966,6 +7966,10 @@ Next.js was created by the Vercel team, then this hosting service is optimized f
 
 As our project contains credentials, it is better to make the GitHub repo private, then link it to Vercel. About environmental variables, see below.
 
+#### Configuring MongoDB Network Access
+
+You will have to `allow access from anywhere` in MongoDB Network Access settings. This is important so that Vercel can access MongoDB to get new data and pre-render pages, store new data from forms, etc.
+
 #### Updating dependencies
 
 Sometimes our project was written with dependencies that are not uptodate to current Vercel standards, so maybe we should update them in our project before deployment, by running `npm install next@12 react@18 react-dom@18 --force`.
@@ -8014,3 +8018,7 @@ https://www.youtube.com/watch?v=S8yn3-WpVV8&ab_channel=TraversyMedia
 ```
 
 ```
+
+## Links
+
+Migreting from a React App to a Next.js app: https://nextjs.org/docs/migrating/from-create-react-app
