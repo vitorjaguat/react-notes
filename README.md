@@ -8339,7 +8339,99 @@ export const useSignup = () => {
 };
 ```
 
-11.
+11. Implementing logout. First we need to update Navbar.js adding an onClick handler to the Logout button. Then, we have to update useLogout.js, so that the logout function also change the user's state online to false, inside the collection 'users' in DB.
+```js
+// Navbar.js
+import { Link } from 'react-router-dom';
+import { useLogout } from '../hooks/useLogout';
+import './Navbar.css';
+import Temple from '../assets/temple.svg';
+
+export default function Navbar() {
+  const { logout, isPending } = useLogout();
+
+  return (
+    <div className="navbar">
+      <ul>
+        <li className="logo">
+          <img src={Temple} alt="Logo" />
+          <span>The Dojo</span>
+        </li>
+        <li>
+          <Link to="/login">Login</Link>
+        </li>
+        <li>
+          <Link to="/signup">Signup</Link>
+        </li>
+        <li>
+          {!isPending && (
+            <button className="btn" onClick={logout}>
+              Logout
+            </button>
+          )}
+          {isPending && (
+            <button className="btn" disabled>
+              Logging out...
+            </button>
+          )}
+        </li>
+      </ul>
+    </div>
+  );
+}
+```
+
+```js
+// hooks/useLogout.js
+import { useEffect, useState } from 'react';
+import { projectAuth, projectFirestore } from '../firebase/config';
+import { useAuthContext } from './useAuthContext';
+
+export const useLogout = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch, user } = useAuthContext();
+
+  const logout = async () => {
+    setError(null);
+    setIsPending(true);
+
+    try {
+      // update online status on users collection in Firebase DB
+      const { uid } = user;
+      await projectFirestore
+        .collection('users')
+        .doc(uid)
+        .update({ online: false });
+
+      // sign the user out in Firebase Auth
+      await projectAuth.signOut();
+
+      // dispatch logout action
+      dispatch({ type: 'LOGOUT' });
+
+      // update state
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (!isCancelled) {
+        setError(err.message);
+        setIsPending(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => setIsCancelled(true);
+  }, []);
+
+  return { logout, error, isPending };
+};
+```
+
 
 12.
 
