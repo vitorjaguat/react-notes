@@ -8535,9 +8535,114 @@ export const useLogin = () => {
 };
 ```
 
-13.
+13. Setting Route Guards, preventing unauthenticated users to reach Dashboard, for example:
 
-14.
+```js
+// app.js
+import { BrowserRouter, Route, Switch, Redirect } from 'react-router-dom';
+import { useAuthContext } from './hooks/useAuthContext';
+import './App.css';
+import Dashboard from './pages/dashboard/Dashboard';
+import Create from './pages/create/Create';
+import Login from './pages/login/Login';
+import Signup from './pages/signup/Signup';
+import Project from './pages/project/Project';
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+
+function App() {
+  const { user, authIsReady } = useAuthContext();
+
+  return (
+    <div className="App">
+      {authIsReady && (
+        <BrowserRouter>
+          <Sidebar />
+          <div className="container">
+            <Navbar />
+            <Switch>
+              <Route exact path="/">
+                {!user && <Redirect to="login" />}
+                {user && <Dashboard />}
+              </Route>
+              <Route path="/create">
+                {!user && <Redirect to="login" />}
+                {user && <Create />}
+              </Route>
+              <Route path="/projects/:id">
+                {!user && <Redirect to="login" />}
+                {user && <Project />}
+              </Route>
+              <Route path="/login">
+                {user && <Redirect to="/" />}
+                {!user && <Login />}
+              </Route>
+              <Route path="/signup">
+                {user && <Redirect to="/" />}
+                {!user && <Signup />}
+              </Route>
+            </Switch>
+          </div>
+        </BrowserRouter>
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+14. Now theta our routes are guarded, the user can't try to go the paths that are forbidden for who is not authenticated. So we can also conditionally show Login/Logout/Signup links on the Navbar, depending if the user is authenticated or not.
+
+```js
+//Navbar.js
+import { Link } from 'react-router-dom';
+import { useLogout } from '../hooks/useLogout';
+import { useAuthContext } from '../hooks/useAuthContext';
+import './Navbar.css';
+import Temple from '../assets/temple.svg';
+
+export default function Navbar() {
+  const { logout, isPending } = useLogout();
+  const { user } = useAuthContext();
+
+  return (
+    <div className="navbar">
+      <ul>
+        <li className="logo">
+          <img src={Temple} alt="Logo" />
+          <span>The Dojo</span>
+        </li>
+
+        {!user && (
+          <>
+            <li>
+              <Link to="/login">Login</Link>
+            </li>
+            <li>
+              <Link to="/signup">Signup</Link>
+            </li>
+          </>
+        )}
+        {user && (
+          <li>
+            {!isPending && (
+              <button className="btn" onClick={logout}>
+                Logout
+              </button>
+            )}
+            {isPending && (
+              <button className="btn" disabled>
+                Logging out...
+              </button>
+            )}
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+}
+```
 
 15.
 
