@@ -8644,6 +8644,225 @@ export default function Navbar() {
 }
 ```
 
-15.
+15. Showing avatar in the sidebar. The 'user' object, that we can grab by calling useAuthContext, contains a `photoURL` property, which contains the url for the thumbnail of our user. The thumbnails are stored in Storage. So, first we have to create a little Avatar.js component and add it to the sidebar. Then we have to set the sidebar to only show conditionally - otherwise we will get an error, because we will have no user object to get the photoURL.
 
-16.
+```js
+import { NavLink } from 'react-router-dom';
+import { useAuthContext } from '../hooks/useAuthContext';
+import './Sidebar.css';
+import DashboardIcon from '../assets/dashboard_icon.svg';
+import AddIcon from '../assets/add_icon.svg';
+import Avatar from './Avatar';
+
+export default function Sidebar() {
+  const { user } = useAuthContext();
+
+  return (
+    <div className="sidebar">
+      <div className="sidebar-content">
+        <div className="user">
+          <Avatar src={user.photoURL} />
+          <p>Hey, {user.displayName}</p>
+        </div>
+
+        <nav className="links">
+          <ul>
+            <li>
+              <NavLink exact to="/">
+                <img src={DashboardIcon} alt="dashboard" />
+                <span>Dashboard</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/create">
+                <img src={AddIcon} alt="create new" />
+                <span>New Project</span>
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  );
+}
+```
+
+16. Create an OnlineUsers.js component to show all users. We will use the custom hook `useCollection` to get an array of all items on the `users` collection. We are also conditionally showing a green circle (a span styled with css) if the user is currently online.
+
+```js
+import { useCollection } from '../hooks/useCollection';
+import Avatar from './Avatar';
+import './OnlineUsers.css';
+
+export default function OnlineUsers() {
+  const { error, documents } = useCollection('users');
+
+  return (
+    <div className="user-list">
+      <h2>All Users</h2>
+      {error && <div className="error">{error}</div>}
+      {documents &&
+        documents.map((user) => (
+          <div key={user.id} className="user-list-item">
+            {user.online && <span className="online-user"></span>}
+            <span>{user.displayName}</span>
+            <Avatar src={user.photoURL} />
+          </div>
+        ))}
+    </div>
+  );
+}
+```
+
+17. Start creating a Create.js page, adding a form to create a new project.
+
+```js
+// pages/create/Create.js
+import { useState } from 'react';
+import './Create.css';
+
+export default function Create() {
+  const [name, setName] = useState('');
+  const [details, setDetails] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [assignedUsers, setAssignedUsers] = useState([]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(name, details, dueDate);
+  };
+
+  return (
+    <div className="create-form">
+      <h2 className="page-title">Create a new project</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          <span>Project name:</span>
+          <input
+            required
+            type="text"
+            onChange={(e) => setName(e.target.value)}
+            value={name}
+          />
+        </label>
+        <label>
+          <span>Project details:</span>
+          <textarea
+            required
+            type="text"
+            onChange={(e) => setDetails(e.target.value)}
+            value={details}
+          ></textarea>
+        </label>
+        <label>
+          <span>Set due date:</span>
+          <input
+            required
+            type="date"
+            onChange={(e) => setDueDate(e.target.value)}
+            value={dueDate}
+          />
+        </label>
+
+        <label>
+          <span>Project category:</span>
+          {/* category select here */}
+        </label>
+        <label>
+          <span>Assign to:</span>
+          {/* assignee select here */}
+        </label>
+
+        <button className="btn">add project</button>
+      </form>
+    </div>
+  );
+}
+```
+
+18. Introducing the React Select package. It is a package that allows us to easily create select tags inside of our forms.
+    I. `npm i react-select`
+    II. `import { Select } from 'react-select'`
+    III. create an array `categories` of objects (can be outside of the component if it won't change).
+    IV. Build a Select component with a prop called `options` containing that array. Also set an `onChange` handler prop.
+
+```js
+// Create.js
+import { useState } from 'react';
+import Select from 'react-select';
+import './Create.css';
+
+const categories = [
+  { value: 'development', label: 'Development' },
+  { value: 'design', label: 'Design' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+];
+
+export default function Create() {
+  const [name, setName] = useState('');
+  const [details, setDetails] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [assignedUsers, setAssignedUsers] = useState([]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(name, details, dueDate, category.value);
+  };
+
+  return (
+    <div className="create-form">
+      <h2 className="page-title">Create a new project</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          <span>Project name:</span>
+          <input
+            required
+            type="text"
+            onChange={(e) => setName(e.target.value)}
+            value={name}
+          />
+        </label>
+        <label>
+          <span>Project details:</span>
+          <textarea
+            required
+            type="text"
+            onChange={(e) => setDetails(e.target.value)}
+            value={details}
+          ></textarea>
+        </label>
+        <label>
+          <span>Set due date:</span>
+          <input
+            required
+            type="date"
+            onChange={(e) => setDueDate(e.target.value)}
+            value={dueDate}
+          />
+        </label>
+
+        <label>
+          <span>Project category:</span>
+          <Select
+            options={categories}
+            onChange={(option) => setCategory(option)}
+          />
+        </label>
+        <label>
+          <span>Assign to:</span>
+          {/* assignee select here */}
+        </label>
+
+        <button className="btn">add project</button>
+      </form>
+    </div>
+  );
+}
+```
+
+19.
+20.
+21.
