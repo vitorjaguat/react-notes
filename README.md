@@ -8340,6 +8340,7 @@ export const useSignup = () => {
 ```
 
 11. Implementing logout. First we need to update Navbar.js adding an onClick handler to the Logout button. Then, we have to update useLogout.js, so that the logout function also change the user's state online to false, inside the collection 'users' in DB.
+
 ```js
 // Navbar.js
 import { Link } from 'react-router-dom';
@@ -8432,8 +8433,107 @@ export const useLogout = () => {
 };
 ```
 
+12. Basically the same as 11, but for Login:
 
-12.
+```js
+// Login.js
+import { useState } from 'react';
+import { useLogin } from '../../hooks/useLogin';
+import './Login.css';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login, isPending, error } = useLogin();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    login(email, password);
+  };
+
+  return (
+    <form className="auth-form" onSubmit={handleSubmit}>
+      <h2>Login</h2>
+      <label>
+        <span>email:</span>
+        <input
+          type="email"
+          required
+          onChange={(e) => setEmail(e.target.value)}
+          value={email}
+        />
+      </label>
+      <label>
+        <span>password:</span>
+        <input
+          type="password"
+          required
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+        />
+      </label>
+
+      {!isPending && <button className="btn">login</button>}
+      {isPending && (
+        <button className="btn" disabled>
+          loading
+        </button>
+      )}
+      {error && <div className="error">{error}</div>}
+    </form>
+  );
+}
+```
+
+```js
+// hooks/useLogin.js
+import { useState, useEffect } from 'react';
+import { projectAuth, projectFirestore } from '../firebase/config';
+import { useAuthContext } from './useAuthContext';
+
+export const useLogin = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch } = useAuthContext();
+
+  const login = async (email, password) => {
+    setError(null);
+    setIsPending(true);
+
+    try {
+      // login in Auth
+      const res = await projectAuth.signInWithEmailAndPassword(email, password);
+
+      // set online property on DB's user to true
+      const { uid } = res.user;
+      await projectFirestore
+        .collection('users')
+        .doc(uid)
+        .update({ online: true });
+
+      // dispatch login action
+      dispatch({ type: 'LOGIN', payload: res.user });
+
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (!isCancelled) {
+        setError(err.message);
+        setIsPending(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => setIsCancelled(true);
+  }, []);
+
+  return { login, isPending, error };
+};
+```
 
 13.
 
