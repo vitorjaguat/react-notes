@@ -8082,8 +8082,271 @@ Now we have the files for rules, indexes and storage.rules in our project.
 
 7. We can use the hooks and auth-context that we created in another project. They're inside this same repo :)
 
-8.
+8. Enable Firestore Storage and update config.js to activate the service in our app:
 
-9.
+```js
+import firebase from 'firebase/app';
+import 'firebase/firestore';
+import 'firebase/auth';
+import 'firebase/storage';
 
-10.
+const firebaseConfig = {
+  apiKey: 'AIzaSyBoGzpEv3rXzBHMWrwIM_U2rzM9ansHGJA',
+  authDomain: 'thedojosite-cf361.firebaseapp.com',
+  projectId: 'thedojosite-cf361',
+  storageBucket: 'thedojosite-cf361.appspot.com',
+  messagingSenderId: '673918625748',
+  appId: '1:673918625748:web:058c1c131b5bcaebacd841',
+};
+
+//initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+//initialize services
+const projectFirestore = firebase.firestore();
+const projectAuth = firebase.auth();
+const projectStorage = firebase.storage();
+
+//timestamp
+const timestamp = firebase.firestore.Timestamp;
+
+export { projectFirestore, projectAuth, projectStorage, timestamp };
+```
+
+9. Update the `useSignup.js` hook to accept an image file object and update `photoURL` property on authenticated user:
+
+```js
+// /hooks/useSignup.js
+import { useState, useEffect } from 'react';
+import { projectAuth, projectStorage } from '../firebase/config';
+import { useAuthContext } from './useAuthContext';
+
+export const useSignup = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch } = useAuthContext();
+
+  const signup = async (email, password, displayName, thumbnail) => {
+    setError(null);
+    setIsPending(true);
+
+    try {
+      // signup
+      const res = await projectAuth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+
+      if (!res) {
+        throw new Error('Could not complete signup');
+      }
+
+      // update user thumbnail
+      const uploadPath = `thumbnails/${res.user.uid}/${thumbnail.name}`; //create the path to upload
+      const img = await projectStorage.ref(uploadPath).put(thumbnail); //uploading
+      const imgURL = await img.ref.getDownloadURL(); //get the uploaded image URL
+
+      // add display name to user
+      await res.user.updateProfile({ displayName, photoURL: imgURL });
+
+      // dispatch login action
+      dispatch({ type: 'LOGIN', payload: res.user });
+
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (!isCancelled) {
+        setError(err.message);
+        setIsPending(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => setIsCancelled(true);
+  }, []);
+
+  return { signup, error, isPending };
+};
+```
+
+```js
+// /pages/signup/Signup.js
+import { useState } from 'react';
+import { useSignup } from '../../hooks/useSignup';
+import './Signup.css';
+
+export default function Signup() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailError, setTumbnailError] = useState(null);
+  const { signup, isPending, error } = useSignup();
+
+  // submit form data, including thumbnail:
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    signup(email, password, displayName, thumbnail);
+  };
+
+  // update 'thumbnail' state:
+  const handleFileChange = (e) => {
+    setThumbnail(null);
+    let selected = e.target.files[0]; //this will be an array, but we just want one file.
+    console.log(selected);
+
+    if (!selected) {
+      setTumbnailError('Please select a file');
+      return;
+    }
+    if (!selected.type.includes('image')) {
+      setTumbnailError('Selected file must be an image');
+      return;
+    }
+    if (selected.size > 100000) {
+      setTumbnailError('Image file size must be less than 100kB');
+      return;
+    }
+
+    setTumbnailError(null);
+    setThumbnail(selected);
+    console.log('thumbnail updated');
+  };
+
+  return (
+    <form className="auth-form" onSubmit={handleSubmit}>
+      <h2>Sign up</h2>
+      <label>
+        <span>email:</span>
+        <input
+          type="email"
+          required
+          onChange={(e) => setEmail(e.target.value)}
+          value={email}
+        />
+      </label>
+      <label>
+        <span>password:</span>
+        <input
+          type="password"
+          required
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+        />
+      </label>
+      <label>
+        <span>display name:</span>
+        <input
+          type="text"
+          required
+          onChange={(e) => setDisplayName(e.target.value)}
+          value={displayName}
+        />
+      </label>
+      <label>
+        <span>profile thumbnail:</span>
+        <input type="file" required onChange={handleFileChange} />
+        {thumbnailError && <div className="error">{thumbnailError}</div>}
+      </label>
+      {!isPending && <button className="btn">sign up</button>}
+      {isPending && (
+        <button className="btn" disabled>
+          loading
+        </button>
+      )}
+      {error && <div className="error">{error}</div>}
+    </form>
+  );
+}
+```
+
+10. Create a collection `users` in Firestore DB. Later on, we will store project's data in that database, but for now we'll create a collection to store userdata, so that this data can ben easily found and used.
+
+So, we have 3 services in Firestore that contain our users data:
+a. Auth, stores user and built-in auth functions
+b. Storage, stores thumbnail image
+c. Database, stores displayName, online state and photoURL (path to Storage file)
+
+```js
+import { useState, useEffect } from 'react';
+import {
+  projectAuth,
+  projectStorage,
+  projectFirestore,
+} from '../firebase/config';
+import { useAuthContext } from './useAuthContext';
+
+export const useSignup = () => {
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [error, setError] = useState(null);
+  const [isPending, setIsPending] = useState(false);
+  const { dispatch } = useAuthContext();
+
+  const signup = async (email, password, displayName, thumbnail) => {
+    setError(null);
+    setIsPending(true);
+
+    try {
+      // signup
+      const res = await projectAuth.createUserWithEmailAndPassword(
+        email,
+        password
+      );
+
+      if (!res) {
+        throw new Error('Could not complete signup');
+      }
+
+      // update user thumbnail
+      const uploadPath = `thumbnails/${res.user.uid}/${thumbnail.name}`; //create the path to upload
+      const img = await projectStorage.ref(uploadPath).put(thumbnail); //uploading
+      const imgURL = await img.ref.getDownloadURL(); //get the uploaded image URL
+
+      // add display name to user
+      await res.user.updateProfile({ displayName, photoURL: imgURL });
+
+      // create a user document inside the 'users' collection in Firestore DB
+      await projectFirestore.collection('users').doc(res.user.uid).set({
+        online: true,
+        displayName,
+        photoURL: imgURL,
+      });
+
+      // dispatch login action
+      dispatch({ type: 'LOGIN', payload: res.user });
+
+      if (!isCancelled) {
+        setIsPending(false);
+        setError(null);
+      }
+    } catch (err) {
+      if (!isCancelled) {
+        setError(err.message);
+        setIsPending(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => setIsCancelled(true);
+  }, []);
+
+  return { signup, error, isPending };
+};
+```
+
+11.
+
+12.
+
+13.
+
+14.
+
+15.
+
+16.
