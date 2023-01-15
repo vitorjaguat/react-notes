@@ -9340,10 +9340,442 @@ export default function ProjectSummary({ project }) {
 }
 ```
 
-25. Create a ProjectComments component
+25. Create a ProjectComments component. It will have a form to create new comment and also display all comments of this projects. We have to update our `useFirestore` hook, so that it can also update an existing document, thus adding a new comment to its 'comments' property.
 
-26.
-27.
-28.
+```js
+// useFirestore.js
+import { useReducer, useEffect, useState } from 'react';
+import { projectFirestore, timestamp } from '../firebase/config';
+
+let initialState = {
+  document: null,
+  isPending: false,
+  error: null,
+  success: null,
+};
+
+const firestoreReducer = (state, action) => {
+  switch (action.type) {
+    case 'IS_PENDING':
+      return { isPending: true, document: null, success: false, error: null };
+    case 'ADDED_DOCUMENT':
+      return {
+        isPending: false,
+        document: action.payload,
+        success: true,
+        error: null,
+      };
+    case 'DELETED_DOCUMENT':
+      return { isPending: false, document: null, success: true, error: null };
+    case 'UPDATED_DOCUMENT':
+      return {
+        isPending: false,
+        document: action.payload,
+        success: true,
+        error: null,
+      };
+    case 'ERROR':
+      return {
+        isPending: false,
+        document: null,
+        success: false,
+        error: action.payload,
+      };
+    default:
+      return state;
+  }
+};
+
+export const useFirestore = (collection) => {
+  const [response, dispatch] = useReducer(firestoreReducer, initialState);
+  const [isCancelled, setIsCancelled] = useState(false);
+
+  // collection ref
+  const ref = projectFirestore.collection(collection);
+
+  // only dispatch is not cancelled
+  const dispatchIfNotCancelled = (action) => {
+    if (!isCancelled) {
+      dispatch(action);
+    }
+  };
+
+  // add a document
+  const addDocument = async (doc) => {
+    dispatch({ type: 'IS_PENDING' });
+
+    try {
+      const createdAt = timestamp.fromDate(new Date());
+      const addedDocument = await ref.add({ ...doc, createdAt });
+      dispatchIfNotCancelled({
+        type: 'ADDED_DOCUMENT',
+        payload: addedDocument,
+      });
+    } catch (err) {
+      dispatchIfNotCancelled({ type: 'ERROR', payload: err.message });
+    }
+  };
+
+  // delete a document
+  const deleteDocument = async (id) => {
+    dispatch({ type: 'IS_PENDING' });
+
+    try {
+      await ref.doc(id).delete();
+      dispatchIfNotCancelled({ type: 'DELETED_DOCUMENT' });
+    } catch (err) {
+      dispatchIfNotCancelled({ type: 'ERROR', payload: 'could not delete' });
+    }
+  };
+
+  // update a document
+  const updateDocument = async (id, updates) => {
+    dispatch({ type: 'IS_PENDING' });
+
+    try {
+      const updatedDocument = await ref.doc(id).update({
+        updates,
+      });
+      dispatchIfNotCancelled({
+        type: 'UPDATED_DOCUMENT',
+        payload: updatedDocument,
+      });
+      return updatedDocument;
+    } catch (err) {
+      dispatchIfNotCancelled({ type: 'ERROR', payload: err.message });
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    return () => setIsCancelled(true);
+  }, []);
+
+  return { addDocument, deleteDocument, updateDocument, response };
+};
+```
+
+```js
+// ProjectComments.js
+import { useState } from 'react';
+import { timestamp } from '../../firebase/config';
+import { useAuthContext } from '../../hooks/useAuthContext';
+import { useFirestore } from '../../hooks/useFirestore';
+import { v4 as uuidv4 } from 'uuid';
+import Avatar from '../../components/Avatar';
+
+export default function ProjectComments({ project }) {
+  const { updateDocument, response } = useFirestore('projects');
+  const [newComment, setNewComment] = useState();
+  const { user } = useAuthContext();
+
+  //add a new comment:
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const commentToAdd = {
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      content: newComment,
+      createdAt: timestamp.fromDate(new Date()),
+      id: uuidv4(), //using uuid package to generate unique id
+    };
+
+    await updateDocument(project.id, {
+      comments: [...project.comments, commentToAdd],
+    });
+    console.log(response);
+    if (!response.error) {
+      setNewComment('');
+    }
+  };
+
+  return (
+    <div className="project-comments">
+      <h4>Project Comments</h4>
+
+      <ul>
+        {project.comments.length > 0 &&
+          project.comments.map((comment) => (
+            <li key={comment.id}>
+              <div className="comment-author">
+                <Avatar src={comment.photoURL} alt={comment.displayName} />
+                <p>{comment.displayName}</p>
+              </div>
+              <div className="comment-date">
+                <p>date here</p>
+              </div>
+              <div className="comment-content">
+                <p>{comment.content}</p>
+              </div>
+            </li>
+          ))}
+      </ul>
+
+      <form className="add-comment" onSubmit={handleSubmit}>
+        <label>
+          <span>Add new comment:</span>
+          <textarea
+            required
+            onChange={(e) => setNewComment(e.target.value)}
+            value={newComment}
+          ></textarea>
+        </label>
+        <button className="btn">Add Comment</button>
+      </form>
+    </div>
+  );
+}
+```
+
+26. Create a button on each Project to mark it as complete (in fact it will delete it from the DB). Conditionally show this button if the user is the user who created the project:
+
+```js
+// ProjectSummary.js
+import { useHistory } from 'react-router-dom';
+import { useFirestore } from '../../hooks/useFirestore';
+import Avatar from '../../components/Avatar';
+import { useAuthContext } from '../../hooks/useAuthContext';
+
+export default function ProjectSummary({ project }) {
+  const history = useHistory();
+  const { deleteDocument } = useFirestore('projects');
+  const { user } = useAuthContext();
+
+  const handleClick = (e) => {
+    deleteDocument(project.id);
+    history.push('/');
+  };
+
+  return (
+    <div>
+      <div className="project-summary">
+        <h2 className="page-title">{project.name}</h2>
+        <p className="created-by">by {project.createdBy.displayName}</p>
+        <p className="due-date">
+          Project due by {project.dueDate.toDate().toDateString()}
+        </p>
+        <p className="details">{project.details}</p>
+        <h4>Project is assigned to:</h4>
+        <div className="assigned-users">
+          {project.assignedUsersList.map((user) => (
+            <div key={user.id}>
+              <Avatar src={user.photoURL} alt={user.displayName} />
+            </div>
+          ))}
+        </div>
+      </div>
+      {user.uid === project.createdBy.id && (
+        <button className="btn" onClick={handleClick}>
+          Mark as Complete
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+27. Add a filter in the Dashboard to filter which projects will display on ProjectList.
+
+```js
+// Dashboard.js
+import { useState } from 'react';
+import ProjectList from '../../components/ProjectList';
+import { useCollection } from '../../hooks/useCollection';
+import './Dashboard.css';
+import ProjectFilter from './ProjectFilter';
+import { useAuthContext } from '../../hooks/useAuthContext';
+
+export default function Dashboard() {
+  const { documents, error } = useCollection('projects');
+  const [currentFilter, setCurrentFilter] = useState('all');
+  const { user } = useAuthContext();
+
+  const changeFilter = (newFilter) => {
+    setCurrentFilter(newFilter);
+  };
+
+  const projects = documents
+    ? documents.filter((document) => {
+        switch (currentFilter) {
+          case 'all':
+            return true;
+          case 'mine':
+            let assignedToMe = false;
+            document.assignedUsersList.forEach((u) => {
+              if (u.id === user.uid) {
+                assignedToMe = true;
+              }
+            });
+            return assignedToMe;
+          case 'development':
+          case 'design':
+          case 'sales':
+          case 'marketing':
+            console.log(document.category, currentFilter);
+            return document.category === currentFilter;
+          default:
+            return true;
+        }
+      })
+    : null;
+
+  return (
+    <div>
+      <h2 className="page-title">Dashboard</h2>
+      {error && <p className="error">{error}</p>}
+      {documents && (
+        <ProjectFilter
+          currentFilter={currentFilter}
+          changeFilter={changeFilter}
+        />
+      )}
+      {documents && <ProjectList projects={projects} />}
+    </div>
+  );
+}
+```
+
+```js
+//ProjectFilter.js
+const filterList = [
+  'all',
+  'mine',
+  'development',
+  'design',
+  'marketing',
+  'sales',
+];
+
+export default function ProjectFilter({ currentFilter, changeFilter }) {
+  const handleClick = (newFilter) => {
+    changeFilter(newFilter);
+  };
+
+  return (
+    <div className="project-filter">
+      <nav>
+        <p>Filter by:</p>
+        {filterList.map((f) => (
+          <button
+            key={f}
+            onClick={() => handleClick(f)}
+            className={currentFilter === f ? 'active' : ''}
+          >
+            {f}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+```
+
+28. Final touch: using `date-fns` package to show comment's dates in the format 'x minutes ago', '3 days ago', etc. `date-fns` is a date package that contains a function called `formatDistanceToNow` that does exactly that. Just pass 2 arguments: the date, and an options object { addSuffix: true } (this is to show words like "ago" etc).
+
+```js
+// ProjectComments.js
+import { useState } from 'react';
+import { timestamp } from '../../firebase/config';
+import { useAuthContext } from '../../hooks/useAuthContext';
+import { useFirestore } from '../../hooks/useFirestore';
+import { v4 as uuidv4 } from 'uuid';
+import Avatar from '../../components/Avatar';
+import formatDistanceToNow from 'date-fns/formatDistanceToNow';
+
+export default function ProjectComments({ project }) {
+  const { updateDocument, response } = useFirestore('projects');
+  const [newComment, setNewComment] = useState();
+  const { user } = useAuthContext();
+
+  //add a new comment:
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const commentToAdd = {
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      content: newComment,
+      createdAt: timestamp.fromDate(new Date()),
+      id: uuidv4(), //using uuid package to generate unique id
+    };
+
+    await updateDocument(project.id, {
+      comments: [...project.comments, commentToAdd],
+    });
+    console.log(response);
+    if (!response.error) {
+      setNewComment('');
+    }
+  };
+
+  return (
+    <div className="project-comments">
+      <h4>Project Comments</h4>
+
+      <ul>
+        {project.comments.length > 0 &&
+          project.comments.map((comment) => (
+            <li key={comment.id}>
+              <div className="comment-author">
+                <Avatar src={comment.photoURL} alt={comment.displayName} />
+                <p>{comment.displayName}</p>
+              </div>
+              <div className="comment-date">
+                <p>
+                  {formatDistanceToNow(comment.createdAt.toDate(), {
+                    addSuffix: true,
+                  })}
+                </p>
+              </div>
+              <div className="comment-content">
+                <p>{comment.content}</p>
+              </div>
+            </li>
+          ))}
+      </ul>
+
+      <form className="add-comment" onSubmit={handleSubmit}>
+        <label>
+          <span>Add new comment:</span>
+          <textarea
+            required
+            onChange={(e) => setNewComment(e.target.value)}
+            value={newComment}
+          ></textarea>
+        </label>
+        <button className="btn">Add Comment</button>
+      </form>
+    </div>
+  );
+}
+```
+
+29. Add Firestore rules
+
+```js
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{user_id} {
+      allow read, create: if request.auth != null;
+      allow update: if request.auth.uid == user_id;
+    }
+    match /projects/{project_id} {
+      allow read, create, update: if request.auth != null;
+      allow delete: if request.auth.uid == resource.data.createdBy.id;
+    }
+  }
+}
+// users collection
+// - any authenticated user can read & create
+// - only users who "own/created" a document can update it (user id's match): a user do it every time it logs in (the online status change to true)
+
+// projects collection
+// - any authenticated user can read, create & update a document
+// - only users who "own/created" a document can delete it
+```
+
 29.
 30.
