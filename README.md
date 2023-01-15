@@ -9264,10 +9264,83 @@ export default function ProjectList({ projects }) {
 }
 ```
 
-23.
+23. Create a `useDocument.js` hook to fetch a single document from a collection. With that, we will get the data to create /projects/:id pages.
 
-24.
-25.
+```js
+// useDocument.js
+import { useEffect, useState } from 'react';
+import { projectFirestore } from '../firebase/config';
+
+export const useDocument = (collection, id) => {
+  const [document, setDocument] = useState(null);
+  const [error, setError] = useState(null);
+
+  //realtime data for document
+  useEffect(() => {
+    const ref = projectFirestore.collection(collection).doc(id);
+
+    const unsubscribe = ref.onSnapshot(
+      (snapshot) => {
+        //check is there is data inside snapshot:
+        if (snapshot.data()) {
+          setDocument({ ...snapshot.data(), id: snapshot.id });
+          setError(null);
+        } else {
+          setError('No such document exists.');
+        }
+      },
+      (err) => {
+        console.log(err.message);
+        setError('Failed to get document');
+      }
+    );
+
+    return () => unsubscribe();
+  }, [collection, id]);
+
+  return { document, error };
+};
+```
+
+24. Create a ProjectSummary component to be put inside of Project.js. Remember to leave space on the side to add comments, here is the css grid to divide the Project.js available space into this two areas:
+
+```js
+//project/Project.css
+.project-details {
+  display: grid;
+  /* divide into 2 columns, one with width of 3fr, one with width of 2fr: */
+  grid-template-columns: 3fr 2fr;
+  align-items: start;
+  grid-gap: 60px;
+}
+```
+
+```js
+// project/ProjectSummary.js
+import Avatar from '../../components/Avatar';
+
+export default function ProjectSummary({ project }) {
+  return (
+    <div className="project-summary">
+      <h2 className="page-title">{project.name}</h2>
+      <p className="due-date">
+        Project due by {project.dueDate.toDate().toDateString()}
+      </p>
+      <p className="details">{project.details}</p>
+      <h4>Project is assigned to:</h4>
+      <div className="assigned-users">
+        {project.assignedUsersList.map((user) => (
+          <div key={user.id}>
+            <Avatar src={user.photoURL} alt={user.displayName} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+25. Create a ProjectComments component
 
 26.
 27.
