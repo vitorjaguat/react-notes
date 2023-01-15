@@ -8863,6 +8863,414 @@ export default function Create() {
 }
 ```
 
-19.
-20.
-21.
+19. In order to create the Select component for the assignedUsers state, first we have to get a list of all users by using `useCollection('users')`. Then we will map through this array, to create another array in the format `[{ label: XXY , value: XXY }, { label: XXX , value: XXX }]`. After passing this array as the value of the prop `options`, we will add the `isMulti` argument: this will allow the user to select multiple users.
+
+```js
+import { useEffect, useState } from 'react';
+import Select from 'react-select';
+import { useCollection } from '../../hooks/useCollection';
+import './Create.css';
+
+const categories = [
+  { value: 'development', label: 'Development' },
+  { value: 'design', label: 'Design' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+];
+
+export default function Create() {
+  const [name, setName] = useState('');
+  const [details, setDetails] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [assignedUsers, setAssignedUsers] = useState([]);
+
+  // getting a list of all users to feed the assignees Select component:
+  const [users, setUsers] = useState([]);
+  const { documents } = useCollection('users');
+  useEffect(() => {
+    if (documents) {
+      const options = documents.map((user) => {
+        return { value: user, label: user.displayName };
+      });
+      setUsers(options);
+    }
+  }, [documents]); //useEffect will "listen" for changes in the documents array.
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(name, details, dueDate, category.value, assignedUsers);
+  };
+
+  return (
+    <div className="create-form">
+      <h2 className="page-title">Create a new project</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          <span>Project name:</span>
+          <input
+            required
+            type="text"
+            onChange={(e) => setName(e.target.value)}
+            value={name}
+          />
+        </label>
+        <label>
+          <span>Project details:</span>
+          <textarea
+            required
+            type="text"
+            onChange={(e) => setDetails(e.target.value)}
+            value={details}
+          ></textarea>
+        </label>
+        <label>
+          <span>Set due date:</span>
+          <input
+            required
+            type="date"
+            onChange={(e) => setDueDate(e.target.value)}
+            value={dueDate}
+          />
+        </label>
+
+        <label>
+          <span>Project category:</span>
+          <Select
+            options={categories}
+            onChange={(option) => setCategory(option)}
+          />
+        </label>
+        <label>
+          <span>Assign to:</span>
+          <Select
+            options={users}
+            onChange={(option) => setAssignedUsers(option)}
+            isMulti //allow selecting multiple users
+          />
+        </label>
+
+        <button className="btn">add project</button>
+      </form>
+    </div>
+  );
+}
+```
+
+20. Handling errors in the Create.js form. We will create a state called formError and make checks when the form is submitted.
+
+```js
+import { useEffect, useState } from 'react';
+import Select from 'react-select';
+import { useCollection } from '../../hooks/useCollection';
+import './Create.css';
+
+const categories = [
+  { value: 'development', label: 'Development' },
+  { value: 'design', label: 'Design' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+];
+
+export default function Create() {
+  const [name, setName] = useState('');
+  const [details, setDetails] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [formError, setFormError] = useState(null); //formError state
+
+  const [users, setUsers] = useState([]);
+  const { documents } = useCollection('users');
+  useEffect(() => {
+    if (documents) {
+      const options = documents.map((user) => {
+        return { value: user, label: user.displayName };
+      });
+      setUsers(options);
+    }
+  }, [documents]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!category) {
+      setFormError('Please select a project category');
+      return;
+    } //checking if category is ''
+
+    if (assignedUsers.length < 1) {
+      setFormError('Please assign the project to at least 1 user');
+      return;
+    } //checking if assignedUsers is []
+
+    console.log(name, details, dueDate, category.value, assignedUsers);
+  };
+
+  return (
+    <div className="create-form">
+      <h2 className="page-title">Create a new project</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          <span>Project name:</span>
+          <input
+            required
+            type="text"
+            onChange={(e) => setName(e.target.value)}
+            value={name}
+          />
+        </label>
+        <label>
+          <span>Project details:</span>
+          <textarea
+            required
+            type="text"
+            onChange={(e) => setDetails(e.target.value)}
+            value={details}
+          ></textarea>
+        </label>
+        <label>
+          <span>Set due date:</span>
+          <input
+            required
+            type="date"
+            onChange={(e) => setDueDate(e.target.value)}
+            value={dueDate}
+          />
+        </label>
+        <label>
+          <span>Project category:</span>
+          <Select
+            options={categories}
+            onChange={(option) => setCategory(option)}
+          />
+        </label>
+        <label>
+          <span>Assign to:</span>
+          <Select
+            options={users}
+            onChange={(option) => setAssignedUsers(option)}
+            isMulti
+          />
+        </label>
+        <button className="btn">add project</button>
+        {formError && <p className="error">{formError}</p>} //outputting the
+        error
+      </form>
+    </div>
+  );
+}
+```
+
+21. Creating a project object and adding it to Firestore DB:
+
+```js
+//Create.js
+import { useEffect, useState } from 'react';
+import Select from 'react-select';
+import { useCollection } from '../../hooks/useCollection';
+import { useFirestore } from '../../hooks/useFirestore';
+import { timestamp, projectFirestore } from '../../firebase/config';
+import { useAuthContext } from '../../hooks/useAuthContext';
+import { useHistory } from 'react-router-dom';
+import './Create.css';
+
+const categories = [
+  { value: 'development', label: 'Development' },
+  { value: 'design', label: 'Design' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+];
+
+export default function Create() {
+  const { user } = useAuthContext();
+  const { addDocument, response } = useFirestore('projects');
+  const history = useHistory();
+
+  const [name, setName] = useState('');
+  const [details, setDetails] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [category, setCategory] = useState('');
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [formError, setFormError] = useState(null);
+
+  // getting a list of all users to feed the assignees Select component:
+  const [users, setUsers] = useState([]);
+  const { documents } = useCollection('users');
+  useEffect(() => {
+    if (documents) {
+      const options = documents.map((user) => {
+        return { value: user, label: user.displayName };
+      });
+      setUsers(options);
+    }
+  }, [documents]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError(null);
+
+    // handling form errors:
+    if (!category) {
+      setFormError('Please select a project category');
+      return;
+    }
+
+    if (assignedUsers.length < 1) {
+      setFormError('Please assign the project to at least 1 user');
+      return;
+    }
+
+    // building the 'project' object:
+    const createdBy = {
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      id: user.uid,
+    };
+
+    const assignedUsersList = assignedUsers.map((u) => {
+      return {
+        displayName: u.value.displayName,
+        photoURL: u.value.photoURL,
+        id: u.value.id,
+      };
+    });
+
+    const project = {
+      name,
+      details,
+      category: category.value,
+      dueDate: timestamp.fromDate(new Date(dueDate)),
+      commments: [],
+      createdBy,
+      assignedUsersList,
+    };
+
+    //adding the project as a document on the collection 'projects':
+    // await projectFirestore.collection('projects').add(project);
+    await addDocument(project);
+    if (!response.error) {
+      history.push('/');
+    }
+
+    console.log(project);
+  };
+
+  return (
+    <div className="create-form">
+      <h2 className="page-title">Create a new project</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          <span>Project name:</span>
+          <input
+            required
+            type="text"
+            onChange={(e) => setName(e.target.value)}
+            value={name}
+          />
+        </label>
+        <label>
+          <span>Project details:</span>
+          <textarea
+            required
+            type="text"
+            onChange={(e) => setDetails(e.target.value)}
+            value={details}
+          ></textarea>
+        </label>
+        <label>
+          <span>Set due date:</span>
+          <input
+            required
+            type="date"
+            onChange={(e) => setDueDate(e.target.value)}
+            value={dueDate}
+          />
+        </label>
+
+        <label>
+          <span>Project category:</span>
+          <Select
+            options={categories}
+            onChange={(option) => setCategory(option)}
+          />
+        </label>
+        <label>
+          <span>Assign to:</span>
+          <Select
+            options={users}
+            onChange={(option) => setAssignedUsers(option)}
+            isMulti
+          />
+        </label>
+
+        <button className="btn">add project</button>
+
+        {formError && <p className="error">{formError}</p>}
+      </form>
+    </div>
+  );
+}
+```
+
+22. Fetching the projects from DB and making a ProjectList comnponent to list them on dashboard. We'll fetch the projects from DB in Dashboard.js and then pass them through prop to ProjectList component.
+
+```js
+// Dashboard.js
+import ProjectList from '../../components/ProjectList';
+import { useCollection } from '../../hooks/useCollection';
+import './Dashboard.css';
+
+export default function Dashboard() {
+  const { documents, error } = useCollection('projects');
+
+  return (
+    <div>
+      <h2 className="page-title">Dashboard</h2>
+      {error && <p className="error">{error}</p>}
+      {documents && <ProjectList projects={documents} />}
+    </div>
+  );
+}
+```
+
+```js
+import { Link } from 'react-router-dom';
+import Avatar from './Avatar';
+import './ProjectList.css';
+
+export default function ProjectList({ projects }) {
+  return (
+    <div className="project-list">
+      {projects.length === 0 && <p>No projects yet.</p>}
+      {projects.map((project) => (
+        <Link key={project.id} to={`/projects/${project.id}`}>
+          <h4>{project.name}</h4>
+          <p>Due by {project.dueDate.toDate().toDateString()}</p>
+          <div className="assigned-to">
+            <ul>
+              {project.assignedUsersList.map((user) => (
+                <li key={user.photoURL}>
+                  <Avatar src={user.photoURL} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+23.
+
+24.
+25.
+
+26.
+27.
+28.
+29.
+30.
