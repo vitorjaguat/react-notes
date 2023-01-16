@@ -9777,5 +9777,23 @@ service cloud.firestore {
 // - only users who "own/created" a document can delete it
 ```
 
-29.
-30.
+29. Firestore Storage rules
+    We can set the storage.rules so that only authenticated users can read or write on our cloud storage in Firebase.
+
+To deploy: `firestore deploy --only firestore:rules`
+
+```js
+// storage.rules
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+30. Deploy the app.
+    First, build: `npm run build`
+    Then, deploy to Firebase: `firebase deploy`
