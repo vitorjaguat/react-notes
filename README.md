@@ -3351,6 +3351,10 @@ const QuoteList = (props) => {
 export default QuoteList;
 ```
 
+## React Router v6.4
+
+_from Max course updates from 2023 Jan 16, section 20, lecture 266, repo react-max-20-router64_
+
 ## React Context & Reducers
 
 Still working on react-recipe-directory repo
@@ -3594,7 +3598,7 @@ export default function Navbar() {
 }
 ```
 
-## Forwarding refs with useImperativeHandler and forwardRef
+### Forwarding refs with useImperativeHandler and forwardRef
 
 This topic is not so well explained in Max lectures 128, 129, repo react-max-section10.
 `Still have to study this point!`
@@ -3789,7 +3793,7 @@ const Input = React.forwardRef((props, ref) => {
 export default Input;
 ```
 
-## React.memo(), useCallback() & useMemo()
+### React.memo(), useCallback() & useMemo()
 
 Important reminder: React handles the reevaluation of components. ReactDOM handles the rendering of DOM. Components are reevaluated every time a state changes. But the DOM is not always re-rendered - it only happens when something in the DOM changes, and it happens after a comparison between the previous DOM and the current DOM, so that only the changes will actually count.
 
@@ -7421,7 +7425,7 @@ What is Next.js?
 - "The React framework for production"
 - A **fullstack** framework for React: that means, it builds up on React, and it makes building large-scale React apps easier.
 
-## Next.js' key-features:
+### Next.js' key-features:
 
 1. Server-side rendering
 
@@ -7442,7 +7446,7 @@ This implies less code, less work and highly understandable and readable structu
 - easily add backend (server-side) code to your apps
 - storing data, getting data, authentication etc. can be added to your React projects
 
-## Creating a Next.js app
+### Creating a Next.js app
 
 `npx create-next-app`
 
@@ -8025,7 +8029,7 @@ Migrating from a React App to a Next.js app: https://nextjs.org/docs/migrating/f
 
 ## React App Pathway
 
-\*based on NN section 17
+\*based on NN section 17, repo
 
 1. Get initial files (from Create React App or another tool).
 
