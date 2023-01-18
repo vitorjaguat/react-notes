@@ -3355,6 +3355,220 @@ export default QuoteList;
 
 _from Max course updates from 2023 Jan 16, section 20, lecture 266, repo react-max-20-router64_
 
+## Defining routes
+
+We generally define our routes in App.js, by storing the result of a `createBrowserRouter([{ path: 'xxx', element: <Xxx /> }, { path: 'yyy', element: <Yyy /> }])` function and passing it through the `router` prop in the returned `RouterProvider` component.
+
+```js
+//App.js
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import Home from './pages/Home';
+import Products from './pages/Products';
+
+const router = createBrowserRouter([
+  { path: '/', element: <Home /> },
+  { path: '/products', element: <Products /> },
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+export default App;
+```
+
+### Defining routes (alternative way)
+
+There is an other way of defining routes, using `createRoutesfromElements(<jsx-code>)` function:
+
+```js
+// App.js
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  RouterProvider,
+  Route,
+} from 'react-router-dom';
+import Home from './pages/Home';
+import Products from './pages/Products';
+
+const routeDefinitions = createRoutesFromElements(
+  <Route>
+    <Route path="/" element={<Home />} />
+    <Route path="/products" element={<Products />} />
+  </Route>
+);
+
+const router = createBrowserRouter(routeDefinitions);
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+export default App;
+```
+
+### Link component
+
+Just like v5.
+
+```js
+// Home.js
+import { Link } from 'react-router-dom';
+
+export default function Home() {
+  return (
+    <>
+      <h1>My Home Page</h1>
+      <p>
+        Go to <Link to="/products">the list of products.</Link>
+      </p>
+    </>
+  );
+}
+```
+
+### Layout
+
+We can add a layout to be rendered on all pages, 'wrapping' all pages' content. Inside the layout component, we also have to indicate _where_ the child components will be rendered, by using the built-in `Outlet` component.
+
+```js
+// App.js
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from 'react-router-dom';
+import Home from './pages/Home';
+import Products from './pages/Products';
+import RootLayout from './pages/Root';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/products', element: <Products /> },
+    ],
+  },
+  ,
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+export default App;
+
+// pages/Root.js
+import { Outlet } from 'react-router-dom';
+import MainNavigation from '../component/MainNavigation';
+import classes from './Root.module.css';
+
+export default function RootLayout() {
+  return (
+    <>
+      <MainNavigation />
+      <main className={classes.content}>
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+// components/MainNavigation.js
+import { Link } from 'react-router-dom';
+import classes from './MainNavigation.module.css';
+
+export default function MainNavigation() {
+  return (
+    <header className={classes.header}>
+      <nav>
+        <ul className={classes.list}>
+          <li>
+            <Link to="/">Home</Link>
+          </li>
+          <li>
+            <Link to="/products">Products</Link>
+          </li>
+        </ul>
+      </nav>
+    </header>
+  );
+}
+```
+
+### Showing error pages with errorElement
+
+We can define a callback component to be rendered whenever the user tries to reach a path that doesn't exist by defining an `errorElement` property in your router definitions.
+
+```js
+// App.js
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorPage />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/products', element: <Products /> },
+    ],
+  },
+  ,
+]);
+etc etc
+```
+
+### NavLink
+
+NavLink component has special features like showing that a link is active (was clicked). Remember to use the `end` attribute to ensure that the path is exact.
+
+```js
+// MainNavigation.module.css
+.list a:hover,
+.list a.active {
+  text-decoration: underline;
+}
+
+// MainNavigation.js
+import { NavLink } from 'react-router-dom';
+import classes from './MainNavigation.module.css';
+
+export default function MainNavigation() {
+  return (
+    <header className={classes.header}>
+      <nav>
+        <ul className={classes.list}>
+          <li>
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                isActive ? classes.active : undefined
+              }
+            >
+              Home
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/products"
+              // className={({ isActive }) =>
+              //   isActive ? classes.active : undefined
+              // }
+              style={({ isActive }) => ({ textDecoration: isActive ? 'underline' : 'none' })}
+            >
+              Products
+            </NavLink>
+          </li>
+        </ul>
+      </nav>
+    </header>
+  );
+}
+```
+
 ## React Context & Reducers
 
 Still working on react-recipe-directory repo
