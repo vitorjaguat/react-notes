@@ -4050,6 +4050,78 @@ export default function Error() {
 
 ### Dynamic paths & loader()
 
+The loader functions of a route accepts 2 parameters: `loader(request, params)`
+
+- the first is a `request` parameter, that can be used, for axample, to get the url (request.url) and work with query strings;
+- the second is a `params` parameter, that can be used to get the actual params used in that :dynamicValue path. Remember we cannot use any hooks like useParams outside of a component.
+
+The rest of the workflow is the same of a static path with loader function.
+
+```js
+// EventDetails.js
+import { json, useParams, useLoaderData } from 'react-router-dom';
+import EventItem from '../components/EventItem';
+
+export default function EventDetail() {
+  const params = useParams();
+  const data = useLoaderData();
+
+  return (
+    <>
+      <EventItem event={data.event} />
+    </>
+  );
+}
+
+export async function loader({ request, params }) {
+  //request.url can access query parameters, for example;
+  const id = params.eventId; //as with useParams, the name of the property will be the same as the :dynamicValue defined in the route definitions
+
+  const response = await fetch('http://localhost:8080/events/' + id);
+
+  if (!response.ok) {
+    throw json(
+      { message: 'Could now fetch details for selected event.' },
+      { status: 500 }
+    );
+  } else {
+    return response;
+  }
+}
+
+// App.js
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    errorElement: <Error />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: eventsLoader,
+          },
+          {
+            path: ':eventId',
+            element: <EventDetail />,
+            loader: eventDetailLoader,
+          },
+          { path: 'new', element: <NewEvent /> },
+          { path: ':eventId/edit', element: <EditEvent /> },
+        ],
+      },
+    ],
+  },
+]);
+etc etc
+```
+
 ### useNavigation
 
 When the user clicks on a path that has a loader function, the page is be shown only after the loader function has completed and the components have been mounted. So, we no longer can have a isPending state to show a 'loading...' message while the data is being fetched.
