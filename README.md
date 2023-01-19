@@ -3428,7 +3428,7 @@ export default function Home() {
 }
 ```
 
-### Layout
+### Root Layout
 
 We can add a layout to be rendered on all pages, 'wrapping' all pages' content. Inside the layout component, we also have to indicate _where_ the child components will be rendered, by using the built-in `Outlet` component.
 
@@ -3498,6 +3498,35 @@ export default function MainNavigation() {
 }
 ```
 
+### Nested layouts
+
+We can add a nested layout inside of a root layout. This nested layout will render its children 'wrapped' in the element component of that path. Again, don't forget the Outlet component inside the nested layout component too.
+
+```js
+// App.js (branch part2, repo react-max-20-router64)
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          { index: true, element: <Events /> },
+          { path: ':eventId', element: <EventDetail /> },
+          { path: 'new', element: <NewEvent /> },
+          { path: ':eventId/edit', element: <EditEvent /> },
+        ],
+      },
+    ],
+  },
+]);
+etc etc
+```
+
 ### Showing error pages with errorElement
 
 We can define a callback component to be rendered whenever the user tries to reach a path that doesn't exist by defining an `errorElement` property in your router definitions.
@@ -3522,7 +3551,7 @@ etc etc
 
 ### NavLink
 
-NavLink component has special features like showing that a link is active (was clicked). Remember to use the `end` attribute to ensure that the path is exact.
+NavLink component has special features like showing that a link is active (was clicked). Remember to use the `end` attribute to ensure that the path is exact. You can also define the styles inline (second NavLink in the example).
 
 ```js
 // MainNavigation.module.css
@@ -3565,6 +3594,484 @@ export default function MainNavigation() {
         </ul>
       </nav>
     </header>
+  );
+}
+```
+
+### Navigating programmatically (redirect)
+
+Instead of using useHistory, in 6.4 we use `useNavigate`. Just save it to a constant `const navigate = useNavigate()`, then call `navigate('/pathname')`.
+
+### Dinamic paths
+
+In the route definitions, we mark the dinamic path with :, eg, `path: '/products/:productId`. Then, in the details component, we extract the entered path by using `useParams` hook.
+
+```js
+// App.js
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorPage />,
+    children: [
+      { path: '/', element: <Home /> },
+      { path: '/products', element: <Products /> },
+      { path: '/products/:productId', element: <ProductDetail /> },
+    ],
+  },
+  ,
+]);
+etc etc
+
+// ProductDetail.js
+import { useParams } from 'react-router-dom';
+
+export default function ProductDetail() {
+  const params = useParams();
+
+  return (
+    <>
+      <div>ProductDetail</div>
+      <p>{params.productId}</p>
+    </>
+  );
+}
+
+// Products.js
+import { Link } from 'react-router-dom';
+
+const PRODUCTS = [
+  { id: 'p1', title: 'Product 1' },
+  { id: 'p2', title: 'Product 2' },
+  { id: 'p3', title: 'Product 3' },
+];
+
+export default function Products() {
+  return (
+    <>
+      <h1>The Products Page</h1>
+      <ul>
+        {PRODUCTS.map((prod) => (
+          <li key={prod.id}>
+            <Link to={`/products/${prod.id}`}>{prod.title}</Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+```
+
+### Absolute paths & Relative paths
+
+In the path definitions in App.js, if the path begins with `/`, we call it an `absolute path`. When the root in our definitions is simply '/', we don't need to add the '/' in the beginning if our nested paths, we just need to write `path: 'path'`.
+
+In Links, the relative path is added after the active path. The absolute path is added after the domain-name.
+
+So, in the Products component, we can change the absolute path
+
+```js
+<Link to={`/products/${prod.id}`}>
+```
+
+to the relative path
+
+```js
+<Link to={prod.id}>
+```
+
+If we use the relative path '..', it goes back to the parent path in the path definition (that is not necessarily equal to .. when used in our CLI for example). To get a behavior that is always the same as in the CLI for '..', we can add the attribute `relative='path'` to the element:
+
+```js
+<Link to=".." relative="path">
+  Back
+</Link>
+```
+
+### index route
+
+In our routes definitions, if we set the property `index: true` of a route to true, then the assigned element will work as an 'index.html' or as a '/' path to that route.
+
+```js
+//App.js
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorPage />,
+    children: [
+      { index: true, element: <Home /> }, //path: ''
+      { path: '/products', element: <Products /> },
+      { path: '/products/:productId', element: <ProductDetail /> },
+    ],
+  },
+]);
+etc etc
+```
+
+### Data fetching with a loader()
+
+_from now on, repo react-max-20-router64, branch part2_
+In Router 6.4, we can define a loader function. The loader function will be called as soon as the user hits the path, even before (or simultaneously) the component itself is loaded.
+
+```js
+// App.js
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: async () => {
+              const response = await fetch('http://localhost:8080/events');
+              if (!response.ok) {
+                // ...
+              } else {
+                const resData = await response.json();
+                return resData.events;
+              }
+            },
+          },
+          { path: ':eventId', element: <EventDetail /> },
+          { path: 'new', element: <NewEvent /> },
+          { path: ':eventId/edit', element: <EditEvent /> },
+        ],
+      },
+    ],
+  },
+]);
+etc etc
+```
+
+The data that is returned from a loader function can be retrieved in the component, by using the `useLoaderData` hook.
+
+The useLoaderData can also be called in components inside the component itself. In the example below, we could call it inside the EventsList component, then we don't have to pass the events object as a prop. That means: you can use useLoaderData in the element that's assigned to that route AND in all components that might be used inside that element.
+
+```js
+import { useLoaderData } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const events = useLoaderData();
+
+  return (
+    <>
+      <EventsList events={events} />
+    </>
+  );
+}
+
+export default EventsPage;
+```
+
+- The usual workflow for loader functions is to export it from the component, then import it in App.js:
+
+```js
+//App.js
+etc etc
+import Events, { loader as eventsLoader } from './pages/Events.js';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: eventsLoader, //here
+          },
+          { path: ':eventId', element: <EventDetail /> },
+          { path: 'new', element: <NewEvent /> },
+          { path: ':eventId/edit', element: <EditEvent /> },
+        ],
+      },
+    ],
+  },
+]);
+etc etc
+```
+
+- The loader function can return responses from fetch, directly. The fetch() function returns a promise, and usually we would call .json() to get the actual data. But with Router6.4 we don't need it. We can return the responses, and the data will be available for consuming as a result of useLoaderData. So the code can stay like this:
+
+```js
+import { useLoaderData } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const data = useLoaderData();
+  const events = data.events;
+
+  return (
+    <>
+      <EventsList events={events} />
+    </>
+  );
+}
+
+export default EventsPage;
+
+export async function loader() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    // ...
+  } else {
+    // const resData = await response.json();
+    // return resData.events;
+    return response; //actually you don't need to call .json(), because the promise is resolved by Router itself when you call useLoaderData()!
+  }
+}
+```
+
+### Handling errors in loader functions
+
+- Handling errors in loader functions (1). When !response.ok, we can returns an object with a "pseudostate", check for it and return a jsx with a custom message:
+
+```js
+import { useLoaderData } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const data = useLoaderData();
+
+  if (data.isError) {
+    return <p>{data.message}</p>;
+  }
+
+  const events = data.events;
+
+  return (
+    <>
+      <EventsList events={events} />
+    </>
+  );
+}
+
+export default EventsPage;
+
+export async function loader() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    return { isError: true, message: 'Could not fetch events.' };
+  } else {
+    return response;
+  }
+}
+```
+
+- Handling errors in loader functions (2): alternatively, we can `throw` an error when !response.ok. When useLoaderData finds the thrown error, it will render the closest error element that is defined in the route definitions.
+
+```js
+import { useLoaderData } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const data = useLoaderData();
+
+  // if (data.isError) {
+  //   return <p>{data.message}</p>;
+  // }
+
+  const events = data.events;
+
+  return (
+    <>
+      <EventsList events={events} />
+    </>
+  );
+}
+
+export default EventsPage;
+
+export async function loader() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    // return { isError: true, message: 'Could not fetch events.' };
+    throw { message: 'Could not fetch events.' }; //once you throw something, the errorElement defined in your route definitions will be loaded. This custom message still wouldn't be shown (see below how to show it).
+  } else {
+    return response;
+  }
+}
+```
+
+- Handling errors in loader functions (3): maybe we want to have only one errorElement in our route definitions, but showing different messages depending on the status of that particular error. Then we can throw a Response() and, in that error page, deconstruct it to get the right message for each case.
+
+```js
+//Events.js
+import { useLoaderData } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const data = useLoaderData();
+
+  // if (data.isError) {
+  //   return <p>{data.message}</p>;
+  // }
+
+  const events = data.events;
+
+  return (
+    <>
+      <EventsList events={events} />
+    </>
+  );
+}
+
+export default EventsPage;
+
+export async function loader() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    throw new Response(
+      JSON.stringify({ message: 'Could not fetch events. ' }),
+      { status: 500 }
+    );
+  } else {
+    return response;
+  }
+};
+
+// Error.js
+import { useRouteError } from 'react-router-dom';
+
+import MainNavigation from '../components/MainNavigation';
+
+export default function Error() {
+  const error = useRouteError();
+
+  let title = 'An error occurred!';
+  let message = 'Something went wrong.';
+
+  if (error.status === 500) {
+    message = JSON.parse(error.data).message;
+  }
+
+  if (error.status === 404) {
+    title = 'Not found!';
+    message = 'Could not find resource or page';
+  }
+
+  return (
+    <>
+      <MainNavigation />
+      <h1>{title}</h1>
+      <p>{message}</p>
+    </>
+  );
+}
+```
+
+- Handling errors in loader functions (4): instead of constructing a Response() object, we can use the `json()` function. It is a Router 6.4 feature that allows you to handle data with no need to use JSON.stringify or JSON.parse methods.
+
+```js
+// Events.js
+import { useLoaderData, json } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const data = useLoaderData();
+
+  const events = data.events;
+
+  return (
+    <>
+      <EventsList events={events} />
+    </>
+  );
+}
+
+export default EventsPage;
+
+export async function loader() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    throw json({ message: 'Could not fetch events.' }, { status: 500 });
+  } else {
+    return response;
+  }
+}
+
+// Error.js
+import { useRouteError } from 'react-router-dom';
+
+import MainNavigation from '../components/MainNavigation';
+
+export default function Error() {
+  const error = useRouteError();
+
+  let title = 'An error occurred!';
+  let message = 'Something went wrong.';
+
+  if (error.status === 500) {
+    message = error.data.message; //no need to parse the object because we used the json function in the loader!
+  }
+
+  if (error.status === 404) {
+    title = 'Not found!';
+    message = 'Could not find resource or page';
+  }
+
+  return (
+    <>
+      <MainNavigation />
+      <h1>{title}</h1>
+      <p>{message}</p>
+    </>
+  );
+}
+```
+
+### Dynamic paths & loader()
+
+### useNavigation
+
+When the user clicks on a path that has a loader function, the page is be shown only after the loader function has completed and the components have been mounted. So, we no longer can have a isPending state to show a 'loading...' message while the data is being fetched.
+
+In order to reflect the current navigation state in the UI, we can use `useNavigation`. When we call this hook, it returns an object with the `state` property. The state property can have 3 values: 'iddle', 'loading' or 'submitting'. Now we can conditionally show some content if `navigation.state === 'loading'`. But this has to be rendered not in the page that will be "waiting", but in a component that is always visible, like the Root layout for example.
+
+```js
+// Root.js
+import { Outlet, useNavigation } from 'react-router-dom';
+import MainNavigation from '../components/MainNavigation';
+
+export default function Root() {
+  const navigation = useNavigation();
+
+  return (
+    <>
+      <MainNavigation />
+      <main>
+        {navigation.state === 'loading' && <p>Loading...</p>}
+        <Outlet />
+      </main>
+    </>
   );
 }
 ```
