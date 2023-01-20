@@ -3355,7 +3355,7 @@ export default QuoteList;
 
 _from Max course updates from 2023 Jan 16, section 20, lecture 266, repo react-max-20-router64_
 
-## Defining routes
+### Defining routes
 
 We generally define our routes in App.js, by storing the result of a `createBrowserRouter([{ path: 'xxx', element: <Xxx /> }, { path: 'yyy', element: <Yyy /> }])` function and passing it through the `router` prop in the returned `RouterProvider` component.
 
