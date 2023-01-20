@@ -4059,11 +4059,11 @@ The rest of the workflow is the same of a static path with loader function.
 
 ```js
 // EventDetails.js
-import { json, useParams, useLoaderData } from 'react-router-dom';
+import { json, useLoaderData } from 'react-router-dom';
 import EventItem from '../components/EventItem';
 
 export default function EventDetail() {
-  const params = useParams();
+  // const params = useParams(); No need to use it because we're getting the params in the loader!
   const data = useLoaderData();
 
   return (
@@ -4122,9 +4122,324 @@ const router = createBrowserRouter([
 etc etc
 ```
 
+### useRouteLoaderData(): accessing data from other routes
+
+We can get the data returned from a loader even outside of its own route, if instead of using useLoaderData, we use `useRouteLoaderData('route-id')`. We have to define an `id` as a property of the route that really has the loader, then pass it as a 'route-id' in useRouterLoaderData.
+
+```js
+//App.js (defining an id for the route)
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    errorElement: <Error />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: eventsLoader,
+          },
+          {
+            path: ':eventId',
+            id: 'event-detail', //here
+            loader: eventDetailLoader,
+            children: [
+              {
+                index: true,
+                element: <EventDetail />,
+              },
+              { path: 'edit', element: <EditEvent /> },
+            ],
+          },
+          { path: 'new', element: <NewEvent /> },
+        ],
+      },
+    ],
+  },
+]);
+etc etc
+
+// EditEvent.js
+import { useRouteLoaderData } from 'react-router-dom';
+import EventForm from '../components/EventForm';
+
+export default function EditEvent() {
+  const data = useRouteLoaderData('event-detail');
+
+  return <EventForm event={data.event} />;
+}
+```
+
+### action function (& Form component)
+
+Just like loader functions, action functions can be exported from the component file, then imported to App.js, then we can point to it as the value of the action property in our route definitions.
+
+Route actions are the "writes" to route loader "reads". They provide a way for apps to perform data mutations with simple HTML and HTTP semantics. Actions are called whenever the app sends a non-get submission ("post", "put", "patch", "delete") to your route.
+
+As loaders, actions also have { request, params } parameter. Here, the `request` object can be used to parse data from the Form component by using `request.formData()`. From formData, we can extract the form entered values, by calling `get('nameOfInput')`.
+
+Now, we just have to construct the data which will be sent as the `body` of the fetch request 'post' to the server.
+
+```js
+// NewEvent.js
+import { json, redirect } from 'react-router-dom';
+import EventForm from '../components/EventForm';
+
+export default function NewEvent() {
+  return <EventForm />;
+}
+
+export async function action({ request, params }) {
+  const data = await request.formData(); //formData() is built-in into the request object.
+
+  const eventData = {
+    title: data.get('title'), //the arguments are the names of the inputs in that Form
+    image: data.get('image'),
+    date: data.get('date'),
+    description: data.get('description'),
+  };
+
+  const response = await fetch('http://localhost:8080/events', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(eventData),
+  });
+
+  if (!response.ok) {
+    throw json({ message: 'Could not save event.' }, { status: 500 });
+  }
+
+  return redirect('/events'); //we are not inside of a component, so we can't use useNavigate! Router 6.4 has the redirect('/path') function for these cases.
+}
+
+// EventForm.js
+import { useNavigate, Form } from 'react-router-dom'; //importing the Form component
+
+import classes from './EventForm.module.css';
+
+function EventForm({ method, event }) {
+  const navigate = useNavigate();
+  function cancelHandler() {
+    navigate('..');
+  }
+
+  return (
+    <Form method="post" className={classes.form}> //using the Form component: add a method!
+      <p>
+        <label htmlFor="title">Title</label>
+        <input
+          id="title"
+          type="text"
+          name="title" //don't forget to add names to all inputs!
+          required
+          defaultValue={event ? event.title : ''}
+        />
+      </p>
+      <p>
+        <label htmlFor="image">Image</label>
+        <input
+          id="image"
+          type="url"
+          name="image"
+          required
+          defaultValue={event ? event.image : ''}
+        />
+      </p>
+      <p>
+        <label htmlFor="date">Date</label>
+        <input
+          id="date"
+          type="date"
+          name="date"
+          required
+          defaultValue={event ? event.date : ''}
+        />
+      </p>
+      <p>
+        <label htmlFor="description">Description</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="5"
+          required
+          defaultValue={event ? event.description : ''}
+        />
+      </p>
+      <div className={classes.actions}>
+        <button type="button" onClick={cancelHandler}>
+          Cancel
+        </button>
+        <button>Save</button>
+      </div>
+    </Form>
+  );
+}
+
+export default EventForm;
+
+//App.js
+etc etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    errorElement: <Error />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: eventsLoader,
+          },
+          {
+            path: ':eventId',
+            id: 'event-detail',
+            loader: eventDetailLoader,
+            children: [
+              {
+                index: true,
+                element: <EventDetail />,
+              },
+              { path: 'edit', element: <EditEvent /> },
+            ],
+          },
+          { path: 'new', element: <NewEvent />, action: newEventAction }, //pointing the action function
+        ],
+      },
+    ],
+  },
+]);
+etc etc
+```
+
+### action function (2): programmatically submit
+
+Besides a Form component, there is another way to trigger an action function. Form components usually send POST requests, but they also can be used to send DELETE or UPDATE requests. Here we will see how to send a DELETE request, but triggering the action without using a Form component. Instead, we'll use the `useSubmit` hook to programmatically trigger the action.
+
+`useSubmit` will take 2 arguments:
+
+- an object that contains the data (this data can be extracted in the action by using request.formData() and .get(), just as when we used Form component to trigger the action)
+- an object that contain other options like method (delete, update, etc) and action (this property is used when we want to trigger an action that is defined in another path that is not the current path)
+
+`useSubmit({ data: 'etc' }, { method: 'etc', action: '/path' })`
+
+The information passed as parameters for useSubmit can be accessed in the action({ request }), request.formData(), request.method, and so on.
+
+```js
+// EventItem.js
+import { Link, useSubmit } from 'react-router-dom';
+
+import classes from './EventItem.module.css';
+
+function EventItem({ event }) {
+  const submit = useSubmit(); //calling useSubmit()
+
+  function startDeleteHandler() {
+    const proceed = window.confirm('Are you sure?'); //browser built-in function, returns a boolean.
+
+    if (proceed) {
+      submit(null, { method: 'delete' }); //programmatically triggering the action
+    }
+  }
+
+  return (
+    <article className={classes.event}>
+      <img src={event.image} alt={event.title} />
+      <h1>{event.title}</h1>
+      <time>{event.date}</time>
+      <p>{event.description}</p>
+      <menu className={classes.actions}>
+        <Link to="edit">Edit</Link>
+        <button onClick={startDeleteHandler}>Delete</button> //the button that is triggering the action
+      </menu>
+    </article>
+  );
+}
+
+export default EventItem;
+
+// EventDetail.js
+etc etc
+export async function action({ params, request }) {
+  const eventId = params.eventId;
+
+  const response = fetch('http://localhost:8080/event' + eventId, {
+    // method: 'DELETE' // by hardcoding like this, you don't need to pass the method as an argument of useSubmit() (in EventItem.js)
+    method: request.method,
+  });
+
+  if (!response.ok) {
+    throw json({ message: 'Could not delete event.' }, { status: 500 });
+  }
+  return redirect('/events');
+}
+
+// App.js
+etc
+import EventDetail, {
+  loader as eventDetailLoader,
+  action as deleteEventAction,
+} from './pages/EventDetail';
+etc
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    errorElement: <Error />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: eventsLoader,
+          },
+          {
+            path: ':eventId',
+            id: 'event-detail',
+            loader: eventDetailLoader,
+            children: [
+              {
+                index: true,
+                element: <EventDetail />,
+                action: deleteEventAction,
+              }, //defining our action for this path
+              { path: 'edit', element: <EditEvent /> },
+            ],
+          },
+          { path: 'new', element: <NewEvent />, action: newEventAction },
+        ],
+      },
+    ],
+  },
+]);
+etc
+```
+
+#### Updating the UI state based on the submission status
+
+This is valid both for submissions sent via Form component or useSubmit.
+
+We can use the useNavigation hook to conditionally showing a message (or disabling a button, for example) IF useNavigation().state is equal to 'submitting'. See more about the useNavigation hook below.
+
 ### useNavigation
 
-When the user clicks on a path that has a loader function, the page is be shown only after the loader function has completed and the components have been mounted. So, we no longer can have a isPending state to show a 'loading...' message while the data is being fetched.
+When the user clicks on a path that has a loader function, the page will be shown only after the loader function has completed and the components have been mounted. So, we no longer can have a isPending state to show a 'loading...' message while the data is being fetched.
 
 In order to reflect the current navigation state in the UI, we can use `useNavigation`. When we call this hook, it returns an object with the `state` property. The state property can have 3 values: 'iddle', 'loading' or 'submitting'. Now we can conditionally show some content if `navigation.state === 'loading'`. But this has to be rendered not in the page that will be "waiting", but in a component that is always visible, like the Root layout for example.
 
