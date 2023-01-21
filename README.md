@@ -1,4 +1,4 @@
-# React 
+# React
 
 ## 0: Markdown
 
@@ -310,11 +310,11 @@ The special sintax that's being used in these files is called JSX.
 
     function ExpenseItem() {
       return (
-        <div className="expense-item">
+        <div className='expense-item'>
           <div>March 28th 2021</div>
-          <div className="expense-item__description">
+          <div className='expense-item__description'>
             <h2>Car Insurance</h2>
-            <div className="expense-item__price">$294.67</div>
+            <div className='expense-item__price'>$294.67</div>
           </div>
         </div>
       );
@@ -484,8 +484,8 @@ NN
 //Modal.js
 export default function Modal(props) {
   return (
-    <div className="modal-backdrop">
-      <div className="modal">{props.children}</div>
+    <div className='modal-backdrop'>
+      <div className='modal'>{props.children}</div>
     </div>
   );
 }
@@ -519,8 +519,8 @@ const handleClose = () => {
 //Modal.js
 export default function Modal(props) {
   return (
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className='modal-backdrop'>
+      <div className='modal'>
         {props.children}
         <button onClick={props.handleClose}>close</button>
       </div>
@@ -546,8 +546,8 @@ import './Modal.css';
 
 export default function Modal(props) {
   return ReactDOM.createPortal(
-    <div className="modal-backdrop">
-      <div className="modal">
+    <div className='modal-backdrop'>
+      <div className='modal'>
         {props.children}
         <button onClick={props.handleClose}>close</button>
       </div>
@@ -584,11 +584,11 @@ const ExpenseItem = (props) => {
   };
 
   return (
-    <Card className="expense-item">
+    <Card className='expense-item'>
       <ExpenseDate date={props.date} />
-      <div className="expense-item__description">
+      <div className='expense-item__description'>
         <h2>{props.title}</h2>
-        <div className="expense-item__price">${props.amount}</div>
+        <div className='expense-item__price'>${props.amount}</div>
       </div>
       <button onClick={clickHandler}>Click Me</button>
     </Card>
@@ -615,7 +615,7 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className='App'>
       <h1>My name is {name}</h1>
       <button onClick={handleClick}>Change name</button>
     </div>
@@ -643,11 +643,11 @@ const ExpenseItem = (props) => {
   };
 
   return (
-    <Card className="expense-item">
+    <Card className='expense-item'>
       <ExpenseDate date={props.date} />
-      <div className="expense-item__description">
+      <div className='expense-item__description'>
         <h2>{title}</h2>
-        <div className="expense-item__price">${props.amount}</div>
+        <div className='expense-item__price'>${props.amount}</div>
       </div>
       <button onClick={clickHandler}>Click Me</button>
     </Card>
@@ -686,32 +686,32 @@ const ExpenseForm = () => {
 
   return (
     <form>
-      <div className="new-expense__controls">
-        <div className="new-expense__control">
+      <div className='new-expense__controls'>
+        <div className='new-expense__control'>
           <label>Title</label>
-          <input type="text" onChange={titleChangeHandler} />
+          <input type='text' onChange={titleChangeHandler} />
         </div>
-        <div className="new-expense__control">
+        <div className='new-expense__control'>
           <label>Amount</label>
           <input
-            type="number"
-            min="0.01"
-            step="0.01"
+            type='number'
+            min='0.01'
+            step='0.01'
             onChange={amountChangeHandler}
           />
         </div>
-        <div className="new-expense__control">
+        <div className='new-expense__control'>
           <label>Date</label>
           <input
-            type="date"
-            min="2019-01-01"
-            max="2022-12-31"
+            type='date'
+            min='2019-01-01'
+            max='2022-12-31'
             onChange={dateChangeHandler}
           />
         </div>
       </div>
-      <div className="new-expense__actions">
-        <button type="submit">Add Expense</button>
+      <div className='new-expense__actions'>
+        <button type='submit'>Add Expense</button>
       </div>
     </form>
   );
@@ -763,32 +763,32 @@ const ExpenseForm = () => {
 
   return (
     <form>
-      <div className="new-expense__controls">
-        <div className="new-expense__control">
+      <div className='new-expense__controls'>
+        <div className='new-expense__control'>
           <label>Title</label>
-          <input type="text" onChange={titleChangeHandler} />
+          <input type='text' onChange={titleChangeHandler} />
         </div>
-        <div className="new-expense__control">
+        <div className='new-expense__control'>
           <label>Amount</label>
           <input
-            type="number"
-            min="0.01"
-            step="0.01"
+            type='number'
+            min='0.01'
+            step='0.01'
             onChange={amountChangeHandler}
           />
         </div>
-        <div className="new-expense__control">
+        <div className='new-expense__control'>
           <label>Date</label>
           <input
-            type="date"
-            min="2019-01-01"
-            max="2022-12-31"
+            type='date'
+            min='2019-01-01'
+            max='2022-12-31'
             onChange={dateChangeHandler}
           />
         </div>
       </div>
-      <div className="new-expense__actions">
-        <button type="submit">Add Expense</button>
+      <div className='new-expense__actions'>
+        <button type='submit'>Add Expense</button>
       </div>
     </form>
   );
@@ -821,7 +821,7 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className='App'>
       <h1>My name is {name}</h1>
       <button onClick={handleClick}>Change name</button>
       {events.map((event, index) => (
@@ -864,7 +864,7 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className='App'>
       {events.map((event, index) => (
         <div key={event.id}>
           <h2>
@@ -915,7 +915,7 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className='App'>
       {events.map((event, index) => (
         <div key={event.id}>
           <h2>
@@ -959,7 +959,7 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className='App'>
       //only show this button when showEvents is true:
       {showEvents && (
         <div>
@@ -1008,9 +1008,9 @@ The way to resolve this problem is to add a **root class** inside components. Fo
 Just add a **style** attribute to the JSX/html element. Put one {} to show that it's a JS value, and another {} to open and close a JS object. The CSS properties/values are key/value pairs of that object. The properties' names must be camelCased whenever needed.
 
 ```js
-<div className="modal-backdrop">
+<div className='modal-backdrop'>
   <div
-    className="modal"
+    className='modal'
     style={{
       border: '$px solid',
       borderColor: '#ff4500',
@@ -1103,9 +1103,9 @@ return (
   <form onSubmit={formSubmitHandler}>
     <div className={`form-control ${!isValid ? 'invalid' : ''}`}>
       <label>Course Goal</label>
-      <input type="text" onChange={goalInputChangeHandler} />
+      <input type='text' onChange={goalInputChangeHandler} />
     </div>
-    <Button type="submit">Add Goal</Button>
+    <Button type='submit'>Add Goal</Button>
   </form>
 );
 ```
@@ -1264,9 +1264,9 @@ const CourseInput = (props) => {
     <form onSubmit={formSubmitHandler}>
       <FormControl className={!isValid && 'invalid'}>
         <label>Course Goal</label>
-        <input type="text" onChange={goalInputChangeHandler} />
+        <input type='text' onChange={goalInputChangeHandler} />
       </FormControl>
-      <Button type="submit">Add Goal</Button>
+      <Button type='submit'>Add Goal</Button>
     </form>
   );
 };
@@ -1336,9 +1336,9 @@ const CourseInput = (props) => {
       ***
       <FormControl invalid={!isValid}>
         <label>Course Goal</label>
-        <input type="text" onChange={goalInputChangeHandler} />
+        <input type='text' onChange={goalInputChangeHandler} />
       </FormControl>
-      <Button type="submit">Add Goal</Button>
+      <Button type='submit'>Add Goal</Button>
     </form>
   );
 };
@@ -1403,14 +1403,14 @@ export default function NewEventForm() {
   const [date, setDate] = useState('');
 
   return (
-    <form className="new-event-form">
+    <form className='new-event-form'>
       <label>
         <span>Event Title:</span>
-        <input type="text" onChange={(e) => setTitle(e.target.value)} />
+        <input type='text' onChange={(e) => setTitle(e.target.value)} />
       </label>
       <label>
         <span>Event Date:</span>
-        <input type="date" onChange={(e) => setDate(e.target.value)} />
+        <input type='date' onChange={(e) => setDate(e.target.value)} />
       </label>
       <button>Submit</button>
       <p>
@@ -1440,11 +1440,11 @@ export default function NewEventForm() {
   };
 
   return (
-    <form className="new-event-form">
+    <form className='new-event-form'>
       <label>
         <span>Event Title:</span>
         <input
-          type="text"
+          type='text'
           onChange={(e) => setTitle(e.target.value)}
           value={title}
         />
@@ -1452,7 +1452,7 @@ export default function NewEventForm() {
       <label>
         <span>Event Date:</span>
         <input
-          type="date"
+          type='date'
           onChange={(e) => setDate(e.target.value)}
           value={date}
         />
@@ -1495,11 +1495,11 @@ export default function NewEventForm() {
   };
 
   return (
-    <form className="new-event-form" onSubmit={handleSubmit}>
+    <form className='new-event-form' onSubmit={handleSubmit}>
       <label>
         <span>Event Title:</span>
         <input
-          type="text"
+          type='text'
           onChange={(e) => setTitle(e.target.value)}
           value={title}
         />
@@ -1507,7 +1507,7 @@ export default function NewEventForm() {
       <label>
         <span>Event Date:</span>
         <input
-          type="date"
+          type='date'
           onChange={(e) => setDate(e.target.value)}
           value={date}
         />
@@ -1552,8 +1552,8 @@ function App() {
   const subtitle = 'All the latest events in Marioland';
 
   return (
-    <div className="App">
-      <Title title="Events in Your Area" subtitle={subtitle} />
+    <div className='App'>
+      <Title title='Events in Your Area' subtitle={subtitle} />
 
       {showEvents && (
         <div>
@@ -1605,11 +1605,11 @@ export default function NewEventForm({ addEvent }) {
   };
 
   return (
-    <form className="new-event-form" onSubmit={handleSubmit}>
+    <form className='new-event-form' onSubmit={handleSubmit}>
       <label>
         <span>Event Title:</span>
         <input
-          type="text"
+          type='text'
           onChange={(e) => setTitle(e.target.value)}
           value={title}
         />
@@ -1617,7 +1617,7 @@ export default function NewEventForm({ addEvent }) {
       <label>
         <span>Event Date:</span>
         <input
-          type="date"
+          type='date'
           onChange={(e) => setDate(e.target.value)}
           value={date}
         />
@@ -1665,14 +1665,14 @@ export default function NewEventForm({ addEvent }) {
   };
 
   return (
-    <form className="new-event-form" onSubmit={handleSubmit}>
+    <form className='new-event-form' onSubmit={handleSubmit}>
       <label>
         <span>Event Title:</span>
-        <input type="text" ref={title} />
+        <input type='text' ref={title} />
       </label>
       <label>
         <span>Event Date:</span>
-        <input type="date" ref={date} />
+        <input type='date' ref={date} />
       </label>
       <button>Submit</button>
     </form>
@@ -1708,7 +1708,7 @@ export default function TripList() {
   console.log(trips);
 
   return (
-    <div className="trip-list">
+    <div className='trip-list'>
       <h2>TripList</h2>
       <ul>
         {trips.map((trip, index) => (
@@ -1747,7 +1747,7 @@ export default function TripList() {
   console.log(trips);
 
   return (
-    <div className="trip-list">
+    <div className='trip-list'>
       <h2>TripList</h2>
       <ul>
         {trips.map((trip, index) => (
@@ -1757,7 +1757,7 @@ export default function TripList() {
           </li>
         ))}
       </ul>
-      <div className="filters">
+      <div className='filters'>
         <button
           onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
         >
@@ -1797,7 +1797,7 @@ export default function TripList() {
   console.log(trips);
 
   return (
-    <div className="trip-list">
+    <div className='trip-list'>
       <h2>TripList</h2>
       <ul>
         {trips.map((trip, index) => (
@@ -1807,7 +1807,7 @@ export default function TripList() {
           </li>
         ))}
       </ul>
-      <div className="filters">
+      <div className='filters'>
         <button
           onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
         >
@@ -1906,7 +1906,7 @@ export default function TripList() {
   const { data: trips, isPending } = useFetch(url);
 
   return (
-    <div className="trip-list">
+    <div className='trip-list'>
       <h2>TripList</h2>
       {isPending && <div>Loading trips...</div>}
       <ul>
@@ -1918,7 +1918,7 @@ export default function TripList() {
             </li>
           ))}
       </ul>
-      <div className="filters">
+      <div className='filters'>
         <button
           onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
         >
@@ -1985,7 +1985,7 @@ export default function TripList() {
   const { data: trips, isPending, error } = useFetch(url);
 
   return (
-    <div className="trip-list">
+    <div className='trip-list'>
       <h2>TripList</h2>
       {isPending && <div>Loading trips...</div>}
       {error && <div>{error}</div>}
@@ -1998,7 +1998,7 @@ export default function TripList() {
             </li>
           ))}
       </ul>
-      <div className="filters">
+      <div className='filters'>
         <button
           onClick={() => setUrl('http://localhost:3000/trips?loc=europe')}
         >
@@ -2058,21 +2058,21 @@ return (
     )}
     <Card className={classes.input}>
       <form onSubmit={addUserHandler}>
-        <label htmlFor="username">Username</label>
+        <label htmlFor='username'>Username</label>
         <input
-          id="username"
-          type="text"
+          id='username'
+          type='text'
           onChange={usernameChangeHandler}
           value={enteredUsername}
         />
-        <label htmlFor="age">Age</label>
+        <label htmlFor='age'>Age</label>
         <input
-          id="age"
-          type="number"
+          id='age'
+          type='number'
           onChange={ageChangeHandler}
           value={enteredAge}
         />
-        <Button type="submit">Add User</Button>
+        <Button type='submit'>Add User</Button>
       </form>
     </Card>
   </Wrapper>
@@ -2280,10 +2280,10 @@ const Login = (props) => {
             emailIsValid === false ? classes.invalid : ''
           }`}
         >
-          <label htmlFor="email">E-Mail</label>
+          <label htmlFor='email'>E-Mail</label>
           <input
-            type="email"
-            id="email"
+            type='email'
+            id='email'
             value={enteredEmail}
             onChange={emailChangeHandler}
             onBlur={validateEmailHandler}
@@ -2294,17 +2294,17 @@ const Login = (props) => {
             passwordIsValid === false ? classes.invalid : ''
           }`}
         >
-          <label htmlFor="password">Password</label>
+          <label htmlFor='password'>Password</label>
           <input
-            type="password"
-            id="password"
+            type='password'
+            id='password'
             value={enteredPassword}
             onChange={passwordChangeHandler}
             onBlur={validatePasswordHandler}
           />
         </div>
         <div className={classes.actions}>
-          <Button type="submit" className={classes.btn} disabled={!formIsValid}>
+          <Button type='submit' className={classes.btn} disabled={!formIsValid}>
             Login
           </Button>
         </div>
@@ -2674,11 +2674,11 @@ new syntax to define routes:
 
 ```js
 <Routes>
-  <Route path="/welcome" element={<Welcome />} />
+  <Route path='/welcome' element={<Welcome />} />
 
-  <Route path="/products" element={<Products />} />
+  <Route path='/products' element={<Products />} />
 
-  <Route path="/products/:productId" element={<ProductDetail />} />
+  <Route path='/products/:productId' element={<ProductDetail />} />
 </Routes>
 ```
 
@@ -2702,7 +2702,7 @@ _repo react-max-20-router branch react-router6-example2_
 The Redirect component doesn't exist anymore. Instead, we can use the Navigate component.
 
 ```js
-<Route path="/" element={<Navigate replace to="/welcome" />} />
+<Route path='/' element={<Navigate replace to='/welcome' />} />
 ```
 
 In v6, Route components always have to be wrapped by Routes component, even in nested routes. Besides, in nested routes (routes that are defined outside the root route file), we set the path to the relative path.
@@ -2718,8 +2718,8 @@ Nested routes can also be defined directly using this kind of syntax:
 
 ```js
 //App.js
-<Route path="/welcome/*" element={<Welcome />}>
-  <Route path="new-user" element={<p>Welcome, new user!</p>} />
+<Route path='/welcome/*' element={<Welcome />}>
+  <Route path='new-user' element={<p>Welcome, new user!</p>} />
 </Route>;
 
 //Welcome.js
@@ -2727,7 +2727,7 @@ const Welcome = () => {
   return (
     <section>
       <h1>The Welcome Page</h1>
-      <Link to="new-user">New User</Link>
+      <Link to='new-user'>New User</Link>
       <Outlet />
     </section>
   );
@@ -2847,7 +2847,7 @@ export default function Welcome() {
   return;
   <section>
     <h1>the welcome page</h1>
-    <Route path="/welcome/new-user">
+    <Route path='/welcome/new-user'>
       <p>Welcome, new user!</p>
     </Route>
   </section>;
@@ -2862,8 +2862,8 @@ return (
     <HighlightedQuote text={quote.text} author={quote.author} />
 
     <Route path={`/quotes/${params.quoteId}`} exact>
-      <div className="centered">
-        <Link className="btn--flat" to={`/quotes/${params.quoteId}/comments`}>
+      <div className='centered'>
+        <Link className='btn--flat' to={`/quotes/${params.quoteId}/comments`}>
           show comments
         </Link>
       </div>
@@ -2871,8 +2871,8 @@ return (
 
     <Route path={`/quotes/${params.quoteId}/comments`}>
       <Comments />
-      <div className="centered">
-        <Link className="btn--flat" to={`/quotes/${params.quoteId}`}>
+      <div className='centered'>
+        <Link className='btn--flat' to={`/quotes/${params.quoteId}`}>
           hide comments
         </Link>
       </div>
@@ -2889,8 +2889,8 @@ We can redirect the user to another url by using the Redirect component.
 For example, in App.js:
 
 ```js
-<Route path="/" exact>
-  <Redirect to="/welcome" />
+<Route path='/' exact>
+  <Redirect to='/welcome' />
 </Route>
 ```
 
@@ -2901,7 +2901,7 @@ For example, in App.js:
 It is good practice to add a '_' route to redirect all non-assigned routes to a Not Found page. Just add a Route with the path assigned to '_':
 
 ```js
-<Route path="*">
+<Route path='*'>
   <NotFound />
 </Route>
 ```
@@ -2923,13 +2923,13 @@ export default function Home() {
   } = useFetch('http://localhost:3000/articles');
 
   return (
-    <div className="home">
+    <div className='home'>
       <h2>Articles</h2>
       {isPending && <div>Loadind...</div>}
       {error && <div>{error}</div>}
       {articles &&
         articles.map((article) => (
-          <div key={article.id} className="card">
+          <div key={article.id} className='card'>
             <h3>{article.title}</h3>
             <p>{article.author}</p>
           </div>
@@ -3161,12 +3161,12 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="searchbar">
+    <div className='searchbar'>
       <form onSubmit={handleSubmit}>
-        <label htmlFor="search">Search:</label>
+        <label htmlFor='search'>Search:</label>
         <input
-          type="text"
-          id="search"
+          type='text'
+          id='search'
           onChange={(e) => setTerm(e.target.value)}
           required
         />
@@ -3195,9 +3195,9 @@ export default function Search() {
 
   return (
     <div>
-      <h2 className="page-title">Recipes including "{query}"</h2>
-      {error && <p className="error">{error}</p>}
-      {isPending && <p className="loading">Loading...</p>}
+      <h2 className='page-title'>Recipes including "{query}"</h2>
+      {error && <p className='error'>{error}</p>}
+      {isPending && <p className='loading'>Loading...</p>}
       {data && <RecipeList recipes={data} />}
     </div>
   );
@@ -3394,8 +3394,8 @@ import Products from './pages/Products';
 
 const routeDefinitions = createRoutesFromElements(
   <Route>
-    <Route path="/" element={<Home />} />
-    <Route path="/products" element={<Products />} />
+    <Route path='/' element={<Home />} />
+    <Route path='/products' element={<Products />} />
   </Route>
 );
 
@@ -3421,7 +3421,7 @@ export default function Home() {
     <>
       <h1>My Home Page</h1>
       <p>
-        Go to <Link to="/products">the list of products.</Link>
+        Go to <Link to='/products'>the list of products.</Link>
       </p>
     </>
   );
@@ -3685,7 +3685,7 @@ to the relative path
 If we use the relative path '..', it goes back to the parent path in the path definition (that is not necessarily equal to .. when used in our CLI for example). To get a behavior that is always the same as in the CLI for '..', we can add the attribute `relative='path'` to the element:
 
 ```js
-<Link to=".." relative="path">
+<Link to='..' relative='path'>
   Back
 </Link>
 ```
@@ -4375,7 +4375,7 @@ etc etc
 export async function action({ params, request }) {
   const eventId = params.eventId;
 
-  const response = fetch('http://localhost:8080/event' + eventId, {
+  const response = await fetch('http://localhost:8080/events' + eventId, {
     // method: 'DELETE' // by hardcoding like this, you don't need to pass the method as an argument of useSubmit() (in EventItem.js)
     method: request.method,
   });
@@ -4436,6 +4436,182 @@ etc
 This is valid both for submissions sent via Form component or useSubmit.
 
 We can use the useNavigation hook to conditionally showing a message (or disabling a button, for example) IF useNavigation().state is equal to 'submitting'. See more about the useNavigation hook below.
+
+#### Reusing actions via request.method
+
+We can use a same action function for two different purposes. For example, we can use a same action to fetch both 'POST' and 'PATCH' (update) fetch requests.
+
+In our code, we will move the action to the EventForm component, and use this Form both to 'POST' and to 'PATCH' a request. We have to make the proper changes on the action and then, finally, define this action function as the action on both routes on App.js.
+
+```js
+// EventForm.js
+import {
+  useNavigate,
+  Form,
+  useNavigation,
+  useActionData,
+  json,
+  redirect,
+} from 'react-router-dom';
+
+import classes from './EventForm.module.css';
+
+function EventForm({ method, event }) {
+  const data = useActionData();
+  const navigate = useNavigate();
+  const navigation = useNavigation();
+
+  const isSubmitting = navigation.state === 'submitting';
+
+  function cancelHandler() {
+    navigate('..');
+  }
+
+  return (
+    <Form method={method} className={classes.form}>
+      //two pages are outputting this component: in NewEvent.js, the prop method
+      is 'post', while in EditEvent.js the prop method is 'patch'
+      {data && data.errors && (
+        <ul>
+          {Object.values(data.errors).map((err) => (
+            <li key={err}>{err}</li>
+          ))}
+        </ul> //this comes from the validation (lecture 301)
+      )}
+      <p>
+        <label htmlFor='title'>Title</label>
+        <input
+          id='title'
+          type='text'
+          name='title'
+          required
+          defaultValue={event ? event.title : ''}
+        />
+      </p>
+      <p>
+        <label htmlFor='image'>Image</label>
+        <input
+          id='image'
+          type='url'
+          name='image'
+          required
+          defaultValue={event ? event.image : ''}
+        />
+      </p>
+      <p>
+        <label htmlFor='date'>Date</label>
+        <input
+          id='date'
+          type='date'
+          name='date'
+          required
+          defaultValue={event ? event.date : ''}
+        />
+      </p>
+      <p>
+        <label htmlFor='description'>Description</label>
+        <textarea
+          id='description'
+          name='description'
+          rows='5'
+          required
+          defaultValue={event ? event.description : ''}
+        />
+      </p>
+      <div className={classes.actions}>
+        <button type='button' onClick={cancelHandler} disabled={isSubmitting}>
+          Cancel
+        </button>
+        <button disabled={isSubmitting}>
+          {isSubmitting ? 'Saving...' : 'Save'}
+        </button>
+      </div>
+    </Form>
+  );
+}
+
+export default EventForm;
+
+export async function action({ request, params }) {
+  const method = request.method; //extract the method from the request that has been sent
+  const data = await request.formData();
+
+  const eventData = {
+    title: data.get('title'), //the arguments are the names of the inputs in that Form
+    image: data.get('image'),
+    date: data.get('date'),
+    description: data.get('description'),
+  };
+
+  let url = 'http://localhost:8080/events/';
+
+  if (method === 'PATCH') {
+    url += params.eventId;
+  } //concat the eventId if the method is 'PATCH'
+
+  const response = await fetch(url, {
+    method: method, //use request.method instead of hard-coding it
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(eventData),
+  });
+
+  if (response.status === 422) {
+    return response;
+  }
+
+  if (!response.ok) {
+    throw json({ message: 'Could not save event.' }, { status: 500 });
+  }
+
+  return redirect('/events');
+}
+
+//App.js
+import { action as manipulateEventAction } from './components/EventForm';
+etc;
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    errorElement: <Error />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: 'events',
+        element: <EventsRoot />,
+        children: [
+          {
+            index: true,
+            element: <Events />,
+            loader: eventsLoader,
+          },
+          {
+            path: ':eventId',
+            id: 'event-detail',
+            loader: eventDetailLoader,
+            children: [
+              {
+                index: true,
+                element: <EventDetail />,
+                action: deleteEventAction,
+              },
+              {
+                path: 'edit',
+                element: <EditEvent />,
+                action: manipulateEventAction,
+              }, //here
+            ],
+          },
+          { path: 'new', element: <NewEvent />, action: manipulateEventAction }, //here
+        ],
+      },
+    ],
+  },
+]);
+etc;
+```
 
 ### useNavigation
 
@@ -4572,13 +4748,13 @@ export default function Navbar() {
   console.log(context);
 
   return (
-    <div className="navbar" style={{ background: context.color }}>
+    <div className='navbar' style={{ background: context.color }}>
       <nav>
-        <Link to="/" className="brand">
+        <Link to='/' className='brand'>
           <h1>Cooking Ninja</h1>
         </Link>
         <SearchBar />
-        <Link to="/create">Create Recipe</Link>
+        <Link to='/create'>Create Recipe</Link>
       </nav>
     </div>
   );
@@ -4616,13 +4792,13 @@ export default function Navbar() {
   const { color } = useTheme();
 
   return (
-    <div className="navbar" style={{ background: color }}>
+    <div className='navbar' style={{ background: color }}>
       <nav>
-        <Link to="/" className="brand">
+        <Link to='/' className='brand'>
           <h1>Cooking Ninja</h1>
         </Link>
         <SearchBar />
-        <Link to="/create">Create Recipe</Link>
+        <Link to='/create'>Create Recipe</Link>
       </nav>
     </div>
   );
@@ -4693,13 +4869,13 @@ export default function Navbar() {
   const { color, changeColor } = useTheme();
 
   return (
-    <div className="navbar" style={{ background: color }}>
+    <div className='navbar' style={{ background: color }}>
       <nav onClick={() => changeColor('pink')}>
-        <Link to="/" className="brand">
+        <Link to='/' className='brand'>
           <h1>Cooking Ninja</h1>
         </Link>
         <SearchBar />
-        <Link to="/create">Create Recipe</Link>
+        <Link to='/create'>Create Recipe</Link>
       </nav>
     </div>
   );
@@ -4946,7 +5122,7 @@ function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className='app'>
       <h1>Hi there!</h1>
       <DemoOutput show={showParagraph} />
       <Button onClick={toggleParagraphHandler}>Toggle Paragraph</Button>
@@ -5693,9 +5869,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="home">
-      {error && <p className="error">{error}</p>}
-      {isPending && <p className="loading">Loading...</p>}
+    <div className='home'>
+      {error && <p className='error'>{error}</p>}
+      {isPending && <p className='loading'>Loading...</p>}
       {data && <RecipeList recipes={data} />}
     </div>
   );
@@ -5750,18 +5926,18 @@ export default function Recipe() {
 
   return (
     <div className={`recipe ${mode}`}>
-      {error && <p className="error">{error}</p>}
-      {isPending && <p className="loading">Loading...</p>}
+      {error && <p className='error'>{error}</p>}
+      {isPending && <p className='loading'>Loading...</p>}
       {recipe && (
         <>
-          <h2 className="page-title">{recipe.title}</h2>
+          <h2 className='page-title'>{recipe.title}</h2>
           <p>Takes {recipe.cookingTime} to cook.</p>
           <ul>
             {recipe.ingredients.map((ing) => (
               <li key={ing}>{ing}</li>
             ))}
           </ul>
-          <p className="method">{recipe.method}</p>
+          <p className='method'>{recipe.method}</p>
         </>
       )}
     </div>
@@ -6027,7 +6203,7 @@ export default function Signup() {
       <label>
         <span>email:</span>
         <input
-          type="email"
+          type='email'
           onChange={(e) => setEmail(e.target.value)}
           value={email}
         />
@@ -6035,7 +6211,7 @@ export default function Signup() {
       <label>
         <span>password:</span>
         <input
-          type="password"
+          type='password'
           onChange={(e) => setPassword(e.target.value)}
           value={password}
         />
@@ -6043,14 +6219,14 @@ export default function Signup() {
       <label>
         <span>display name:</span>
         <input
-          type="text"
+          type='text'
           onChange={(e) => setDisplayName(e.target.value)}
           value={displayName}
         />
       </label>
-      {!isPending && <button className="btn">Signup</button>}
+      {!isPending && <button className='btn'>Signup</button>}
       {isPending && (
-        <button className="btn" disabled>
+        <button className='btn' disabled>
           loading
         </button>
       )}
@@ -6267,15 +6443,15 @@ export default function Navbar() {
     <nav className={styles.navbar}>
       <ul>
         <li className={styles.title}>
-          <Link to="/">myMoney</Link>
+          <Link to='/'>myMoney</Link>
         </li>
         <li>
-          <Link to="/login">Login</Link>
+          <Link to='/login'>Login</Link>
         </li>
         <li>
-          <Link to="/signup">Signup</Link>
+          <Link to='/signup'>Signup</Link>
         </li>
-        <button className="btn" onClick={logout}>
+        <button className='btn' onClick={logout}>
           Logout
         </button>//using the logout fnc
       </ul>
@@ -6358,7 +6534,7 @@ export default function Login() {
       <label>
         <span>email:</span>
         <input
-          type="email"
+          type='email'
           onChange={(e) => setEmail(e.target.value)}
           value={email}
         />
@@ -6366,14 +6542,14 @@ export default function Login() {
       <label>
         <span>password:</span>
         <input
-          type="password"
+          type='password'
           onChange={(e) => setPassword(e.target.value)}
           value={password}
         />
       </label>
-      {!isPending && <button className="btn">Login</button>}
+      {!isPending && <button className='btn'>Login</button>}
       {isPending && (
-        <button className="btn" disabled>
+        <button className='btn' disabled>
           loading
         </button>
       )}
@@ -6405,16 +6581,16 @@ export default function Navbar() {
     <nav className={styles.navbar}>
       <ul>
         <li className={styles.title}>
-          <Link to="/">myMoney</Link>
+          <Link to='/'>myMoney</Link>
         </li>
 
         {!user && (
           <>
             <li>
-              <Link to="/login">Login</Link>
+              <Link to='/login'>Login</Link>
             </li>
             <li>
-              <Link to="/signup">Signup</Link>
+              <Link to='/signup'>Signup</Link>
             </li>
           </>
         )}
@@ -6423,7 +6599,7 @@ export default function Navbar() {
           <>
             <li>hello, {user.displayName}</li>
             <li>
-              <button className="btn" onClick={logout}>
+              <button className='btn' onClick={logout}>
                 Logout
               </button>
             </li>
@@ -6533,21 +6709,21 @@ function App() {
   const { authIsReady, user } = useAuthContext();
 
   return (
-    <div className="App">
+    <div className='App'>
       {authIsReady && (
         <BrowserRouter>
           <Navbar />
           <Switch>
-            <Route exact path="/">
-              {!user && <Redirect to="/login" />}
+            <Route exact path='/'>
+              {!user && <Redirect to='/login' />}
               {user && <Home />}
             </Route>
-            <Route path="/login">
-              {user && <Redirect to="/" />}
+            <Route path='/login'>
+              {user && <Redirect to='/' />}
               {!user && <Login />}
             </Route>
-            <Route path="/signup">
-              {user && <Redirect to="/" />}
+            <Route path='/signup'>
+              {user && <Redirect to='/' />}
               {!user && <Signup />}
             </Route>
           </Switch>
@@ -6574,22 +6750,22 @@ function App() {
   const { authIsReady, user } = useAuthContext();
 
   return (
-    <div className="App">
+    <div className='App'>
       {authIsReady && (
         <BrowserRouter>
           <Navbar />
           <Routes>
             <Route
-              path="/"
-              element={user ? <Home /> : <Navigate to="/login" />}
+              path='/'
+              element={user ? <Home /> : <Navigate to='/login' />}
             />
             <Route
-              path="/login"
-              element={!user ? <Login /> : <Navigate to="/" />}
+              path='/login'
+              element={!user ? <Login /> : <Navigate to='/' />}
             />
             <Route
-              path="/signup"
-              element={!user ? <Signup /> : <Navigate to="/" />}
+              path='/signup'
+              element={!user ? <Signup /> : <Navigate to='/' />}
             />
           </Routes>
         </BrowserRouter>
@@ -7174,19 +7350,19 @@ const MainNavigation = () => {
 
   return (
     <header className={classes.header}>
-      <Link to="/">
+      <Link to='/'>
         <div className={classes.logo}>React Auth</div>
       </Link>
       <nav>
         <ul>
           {!authCtx.isLoggedIn && (
             <li>
-              <Link to="/auth">Login</Link>
+              <Link to='/auth'>Login</Link>
             </li>
           )}
           {authCtx.isLoggedIn && (
             <li>
-              <Link to="/profile">Profile</Link>
+              <Link to='/profile'>Profile</Link>
             </li>
           )}
           {authCtx.isLoggedIn && (
@@ -7223,21 +7399,21 @@ function App() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" exact>
+        <Route path='/' exact>
           <HomePage />
         </Route>
         {!authCtx.isLoggedIn && (
-          <Route path="/auth">
+          <Route path='/auth'>
             <AuthPage />
           </Route>
         )}
         {authCtx.isLoggedIn && (
-          <Route path="/profile">
+          <Route path='/profile'>
             <UserProfile />
           </Route>
         )}
-        <Route path="*">
-          <Redirect to="/" />
+        <Route path='*'>
+          <Redirect to='/' />
         </Route>
       </Switch>
     </Layout>
@@ -8395,25 +8571,25 @@ function App() {
       Suspense is mandatory when using lazy loading!
       <Suspense
         fallback={
-          <div className="centered">
+          <div className='centered'>
             <LoadingSpinner />
           </div>
         }
       >
         <Switch>
-          <Route path="/" exact>
-            <Redirect to="/quotes" />
+          <Route path='/' exact>
+            <Redirect to='/quotes' />
           </Route>
-          <Route path="/quotes" exact>
+          <Route path='/quotes' exact>
             <AllQuotes />
           </Route>
-          <Route path="/quotes/:quoteId">
+          <Route path='/quotes/:quoteId'>
             <QuoteDetail />
           </Route>
-          <Route path="/new-quote">
+          <Route path='/new-quote'>
             <NewQuote />
           </Route>
-          <Route path="*">
+          <Route path='*'>
             <NotFound />
           </Route>
         </Switch>
@@ -8601,7 +8777,7 @@ In order to link between pages (inside a navbar for example), we can use the Lin
 While React's Link component takes a `to=` prop, the Next.js Link component takes a `href=` prop.
 
 ```js
-<Link href="/news/bolsonaristas-cagam-na-cadeira-do-xandao">
+<Link href='/news/bolsonaristas-cagam-na-cadeira-do-xandao'>
   Bolsonaristas cagam na cadeira do Xandão
 </Link>
 ```
@@ -8621,10 +8797,10 @@ function MainNavigation() {
       <nav>
         <ul>
           <li>
-            <Link href="/">All Meetups</Link>
+            <Link href='/'>All Meetups</Link>
           </li>
           <li>
-            <Link href="/new-meetup">Add New Meetup</Link>
+            <Link href='/new-meetup'>Add New Meetup</Link>
           </li>
         </ul>
       </nav>
@@ -9032,8 +9208,8 @@ function MyApp({ Component, pageProps }) {
       <Head>
         <title>Meetups</title>
         <meta
-          name="description"
-          content="Your website to create meetups all around the world"
+          name='description'
+          content='Your website to create meetups all around the world'
         />
       </Head>
       <Layout>
@@ -9330,12 +9506,12 @@ export default function Signup() {
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className='auth-form' onSubmit={handleSubmit}>
       <h2>Sign up</h2>
       <label>
         <span>email:</span>
         <input
-          type="email"
+          type='email'
           required
           onChange={(e) => setEmail(e.target.value)}
           value={email}
@@ -9344,7 +9520,7 @@ export default function Signup() {
       <label>
         <span>password:</span>
         <input
-          type="password"
+          type='password'
           required
           onChange={(e) => setPassword(e.target.value)}
           value={password}
@@ -9353,7 +9529,7 @@ export default function Signup() {
       <label>
         <span>display name:</span>
         <input
-          type="text"
+          type='text'
           required
           onChange={(e) => setDisplayName(e.target.value)}
           value={displayName}
@@ -9361,16 +9537,16 @@ export default function Signup() {
       </label>
       <label>
         <span>profile thumbnail:</span>
-        <input type="file" required onChange={handleFileChange} />
-        {thumbnailError && <div className="error">{thumbnailError}</div>}
+        <input type='file' required onChange={handleFileChange} />
+        {thumbnailError && <div className='error'>{thumbnailError}</div>}
       </label>
-      {!isPending && <button className="btn">sign up</button>}
+      {!isPending && <button className='btn'>sign up</button>}
       {isPending && (
-        <button className="btn" disabled>
+        <button className='btn' disabled>
           loading
         </button>
       )}
-      {error && <div className="error">{error}</div>}
+      {error && <div className='error'>{error}</div>}
     </form>
   );
 }
@@ -9464,26 +9640,26 @@ export default function Navbar() {
   const { logout, isPending } = useLogout();
 
   return (
-    <div className="navbar">
+    <div className='navbar'>
       <ul>
-        <li className="logo">
-          <img src={Temple} alt="Logo" />
+        <li className='logo'>
+          <img src={Temple} alt='Logo' />
           <span>The Dojo</span>
         </li>
         <li>
-          <Link to="/login">Login</Link>
+          <Link to='/login'>Login</Link>
         </li>
         <li>
-          <Link to="/signup">Signup</Link>
+          <Link to='/signup'>Signup</Link>
         </li>
         <li>
           {!isPending && (
-            <button className="btn" onClick={logout}>
+            <button className='btn' onClick={logout}>
               Logout
             </button>
           )}
           {isPending && (
-            <button className="btn" disabled>
+            <button className='btn' disabled>
               Logging out...
             </button>
           )}
@@ -9564,12 +9740,12 @@ export default function Login() {
   };
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className='auth-form' onSubmit={handleSubmit}>
       <h2>Login</h2>
       <label>
         <span>email:</span>
         <input
-          type="email"
+          type='email'
           required
           onChange={(e) => setEmail(e.target.value)}
           value={email}
@@ -9578,20 +9754,20 @@ export default function Login() {
       <label>
         <span>password:</span>
         <input
-          type="password"
+          type='password'
           required
           onChange={(e) => setPassword(e.target.value)}
           value={password}
         />
       </label>
 
-      {!isPending && <button className="btn">login</button>}
+      {!isPending && <button className='btn'>login</button>}
       {isPending && (
-        <button className="btn" disabled>
+        <button className='btn' disabled>
           loading
         </button>
       )}
-      {error && <div className="error">{error}</div>}
+      {error && <div className='error'>{error}</div>}
     </form>
   );
 }
@@ -9666,31 +9842,31 @@ function App() {
   const { user, authIsReady } = useAuthContext();
 
   return (
-    <div className="App">
+    <div className='App'>
       {authIsReady && (
         <BrowserRouter>
           <Sidebar />
-          <div className="container">
+          <div className='container'>
             <Navbar />
             <Switch>
-              <Route exact path="/">
-                {!user && <Redirect to="login" />}
+              <Route exact path='/'>
+                {!user && <Redirect to='login' />}
                 {user && <Dashboard />}
               </Route>
-              <Route path="/create">
-                {!user && <Redirect to="login" />}
+              <Route path='/create'>
+                {!user && <Redirect to='login' />}
                 {user && <Create />}
               </Route>
-              <Route path="/projects/:id">
-                {!user && <Redirect to="login" />}
+              <Route path='/projects/:id'>
+                {!user && <Redirect to='login' />}
                 {user && <Project />}
               </Route>
-              <Route path="/login">
-                {user && <Redirect to="/" />}
+              <Route path='/login'>
+                {user && <Redirect to='/' />}
                 {!user && <Login />}
               </Route>
-              <Route path="/signup">
-                {user && <Redirect to="/" />}
+              <Route path='/signup'>
+                {user && <Redirect to='/' />}
                 {!user && <Signup />}
               </Route>
             </Switch>
@@ -9719,32 +9895,32 @@ export default function Navbar() {
   const { user } = useAuthContext();
 
   return (
-    <div className="navbar">
+    <div className='navbar'>
       <ul>
-        <li className="logo">
-          <img src={Temple} alt="Logo" />
+        <li className='logo'>
+          <img src={Temple} alt='Logo' />
           <span>The Dojo</span>
         </li>
 
         {!user && (
           <>
             <li>
-              <Link to="/login">Login</Link>
+              <Link to='/login'>Login</Link>
             </li>
             <li>
-              <Link to="/signup">Signup</Link>
+              <Link to='/signup'>Signup</Link>
             </li>
           </>
         )}
         {user && (
           <li>
             {!isPending && (
-              <button className="btn" onClick={logout}>
+              <button className='btn' onClick={logout}>
                 Logout
               </button>
             )}
             {isPending && (
-              <button className="btn" disabled>
+              <button className='btn' disabled>
                 Logging out...
               </button>
             )}
@@ -9770,24 +9946,24 @@ export default function Sidebar() {
   const { user } = useAuthContext();
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-content">
-        <div className="user">
+    <div className='sidebar'>
+      <div className='sidebar-content'>
+        <div className='user'>
           <Avatar src={user.photoURL} />
           <p>Hey, {user.displayName}</p>
         </div>
 
-        <nav className="links">
+        <nav className='links'>
           <ul>
             <li>
-              <NavLink exact to="/">
-                <img src={DashboardIcon} alt="dashboard" />
+              <NavLink exact to='/'>
+                <img src={DashboardIcon} alt='dashboard' />
                 <span>Dashboard</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to="/create">
-                <img src={AddIcon} alt="create new" />
+              <NavLink to='/create'>
+                <img src={AddIcon} alt='create new' />
                 <span>New Project</span>
               </NavLink>
             </li>
@@ -9810,13 +9986,13 @@ export default function OnlineUsers() {
   const { error, documents } = useCollection('users');
 
   return (
-    <div className="user-list">
+    <div className='user-list'>
       <h2>All Users</h2>
-      {error && <div className="error">{error}</div>}
+      {error && <div className='error'>{error}</div>}
       {documents &&
         documents.map((user) => (
-          <div key={user.id} className="user-list-item">
-            {user.online && <span className="online-user"></span>}
+          <div key={user.id} className='user-list-item'>
+            {user.online && <span className='online-user'></span>}
             <span>{user.displayName}</span>
             <Avatar src={user.photoURL} />
           </div>
@@ -9846,14 +10022,14 @@ export default function Create() {
   };
 
   return (
-    <div className="create-form">
-      <h2 className="page-title">Create a new project</h2>
+    <div className='create-form'>
+      <h2 className='page-title'>Create a new project</h2>
       <form onSubmit={handleSubmit}>
         <label>
           <span>Project name:</span>
           <input
             required
-            type="text"
+            type='text'
             onChange={(e) => setName(e.target.value)}
             value={name}
           />
@@ -9862,7 +10038,7 @@ export default function Create() {
           <span>Project details:</span>
           <textarea
             required
-            type="text"
+            type='text'
             onChange={(e) => setDetails(e.target.value)}
             value={details}
           ></textarea>
@@ -9871,7 +10047,7 @@ export default function Create() {
           <span>Set due date:</span>
           <input
             required
-            type="date"
+            type='date'
             onChange={(e) => setDueDate(e.target.value)}
             value={dueDate}
           />
@@ -9886,7 +10062,7 @@ export default function Create() {
           {/* assignee select here */}
         </label>
 
-        <button className="btn">add project</button>
+        <button className='btn'>add project</button>
       </form>
     </div>
   );
@@ -9925,14 +10101,14 @@ export default function Create() {
   };
 
   return (
-    <div className="create-form">
-      <h2 className="page-title">Create a new project</h2>
+    <div className='create-form'>
+      <h2 className='page-title'>Create a new project</h2>
       <form onSubmit={handleSubmit}>
         <label>
           <span>Project name:</span>
           <input
             required
-            type="text"
+            type='text'
             onChange={(e) => setName(e.target.value)}
             value={name}
           />
@@ -9941,7 +10117,7 @@ export default function Create() {
           <span>Project details:</span>
           <textarea
             required
-            type="text"
+            type='text'
             onChange={(e) => setDetails(e.target.value)}
             value={details}
           ></textarea>
@@ -9950,7 +10126,7 @@ export default function Create() {
           <span>Set due date:</span>
           <input
             required
-            type="date"
+            type='date'
             onChange={(e) => setDueDate(e.target.value)}
             value={dueDate}
           />
@@ -9968,7 +10144,7 @@ export default function Create() {
           {/* assignee select here */}
         </label>
 
-        <button className="btn">add project</button>
+        <button className='btn'>add project</button>
       </form>
     </div>
   );
@@ -10015,14 +10191,14 @@ export default function Create() {
   };
 
   return (
-    <div className="create-form">
-      <h2 className="page-title">Create a new project</h2>
+    <div className='create-form'>
+      <h2 className='page-title'>Create a new project</h2>
       <form onSubmit={handleSubmit}>
         <label>
           <span>Project name:</span>
           <input
             required
-            type="text"
+            type='text'
             onChange={(e) => setName(e.target.value)}
             value={name}
           />
@@ -10031,7 +10207,7 @@ export default function Create() {
           <span>Project details:</span>
           <textarea
             required
-            type="text"
+            type='text'
             onChange={(e) => setDetails(e.target.value)}
             value={details}
           ></textarea>
@@ -10040,7 +10216,7 @@ export default function Create() {
           <span>Set due date:</span>
           <input
             required
-            type="date"
+            type='date'
             onChange={(e) => setDueDate(e.target.value)}
             value={dueDate}
           />
@@ -10062,7 +10238,7 @@ export default function Create() {
           />
         </label>
 
-        <button className="btn">add project</button>
+        <button className='btn'>add project</button>
       </form>
     </div>
   );
@@ -10121,14 +10297,14 @@ export default function Create() {
   };
 
   return (
-    <div className="create-form">
-      <h2 className="page-title">Create a new project</h2>
+    <div className='create-form'>
+      <h2 className='page-title'>Create a new project</h2>
       <form onSubmit={handleSubmit}>
         <label>
           <span>Project name:</span>
           <input
             required
-            type="text"
+            type='text'
             onChange={(e) => setName(e.target.value)}
             value={name}
           />
@@ -10137,7 +10313,7 @@ export default function Create() {
           <span>Project details:</span>
           <textarea
             required
-            type="text"
+            type='text'
             onChange={(e) => setDetails(e.target.value)}
             value={details}
           ></textarea>
@@ -10146,7 +10322,7 @@ export default function Create() {
           <span>Set due date:</span>
           <input
             required
-            type="date"
+            type='date'
             onChange={(e) => setDueDate(e.target.value)}
             value={dueDate}
           />
@@ -10166,8 +10342,8 @@ export default function Create() {
             isMulti
           />
         </label>
-        <button className="btn">add project</button>
-        {formError && <p className="error">{formError}</p>} //outputting the
+        <button className='btn'>add project</button>
+        {formError && <p className='error'>{formError}</p>} //outputting the
         error
       </form>
     </div>
@@ -10270,14 +10446,14 @@ export default function Create() {
   };
 
   return (
-    <div className="create-form">
-      <h2 className="page-title">Create a new project</h2>
+    <div className='create-form'>
+      <h2 className='page-title'>Create a new project</h2>
       <form onSubmit={handleSubmit}>
         <label>
           <span>Project name:</span>
           <input
             required
-            type="text"
+            type='text'
             onChange={(e) => setName(e.target.value)}
             value={name}
           />
@@ -10286,7 +10462,7 @@ export default function Create() {
           <span>Project details:</span>
           <textarea
             required
-            type="text"
+            type='text'
             onChange={(e) => setDetails(e.target.value)}
             value={details}
           ></textarea>
@@ -10295,7 +10471,7 @@ export default function Create() {
           <span>Set due date:</span>
           <input
             required
-            type="date"
+            type='date'
             onChange={(e) => setDueDate(e.target.value)}
             value={dueDate}
           />
@@ -10317,9 +10493,9 @@ export default function Create() {
           />
         </label>
 
-        <button className="btn">add project</button>
+        <button className='btn'>add project</button>
 
-        {formError && <p className="error">{formError}</p>}
+        {formError && <p className='error'>{formError}</p>}
       </form>
     </div>
   );
@@ -10339,8 +10515,8 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h2 className="page-title">Dashboard</h2>
-      {error && <p className="error">{error}</p>}
+      <h2 className='page-title'>Dashboard</h2>
+      {error && <p className='error'>{error}</p>}
       {documents && <ProjectList projects={documents} />}
     </div>
   );
@@ -10354,13 +10530,13 @@ import './ProjectList.css';
 
 export default function ProjectList({ projects }) {
   return (
-    <div className="project-list">
+    <div className='project-list'>
       {projects.length === 0 && <p>No projects yet.</p>}
       {projects.map((project) => (
         <Link key={project.id} to={`/projects/${project.id}`}>
           <h4>{project.name}</h4>
           <p>Due by {project.dueDate.toDate().toDateString()}</p>
-          <div className="assigned-to">
+          <div className='assigned-to'>
             <ul>
               {project.assignedUsersList.map((user) => (
                 <li key={user.photoURL}>
@@ -10433,14 +10609,14 @@ import Avatar from '../../components/Avatar';
 
 export default function ProjectSummary({ project }) {
   return (
-    <div className="project-summary">
-      <h2 className="page-title">{project.name}</h2>
-      <p className="due-date">
+    <div className='project-summary'>
+      <h2 className='page-title'>{project.name}</h2>
+      <p className='due-date'>
         Project due by {project.dueDate.toDate().toDateString()}
       </p>
-      <p className="details">{project.details}</p>
+      <p className='details'>{project.details}</p>
       <h4>Project is assigned to:</h4>
-      <div className="assigned-users">
+      <div className='assigned-users'>
         {project.assignedUsersList.map((user) => (
           <div key={user.id}>
             <Avatar src={user.photoURL} alt={user.displayName} />
@@ -10603,28 +10779,28 @@ export default function ProjectComments({ project }) {
   };
 
   return (
-    <div className="project-comments">
+    <div className='project-comments'>
       <h4>Project Comments</h4>
 
       <ul>
         {project.comments.length > 0 &&
           project.comments.map((comment) => (
             <li key={comment.id}>
-              <div className="comment-author">
+              <div className='comment-author'>
                 <Avatar src={comment.photoURL} alt={comment.displayName} />
                 <p>{comment.displayName}</p>
               </div>
-              <div className="comment-date">
+              <div className='comment-date'>
                 <p>date here</p>
               </div>
-              <div className="comment-content">
+              <div className='comment-content'>
                 <p>{comment.content}</p>
               </div>
             </li>
           ))}
       </ul>
 
-      <form className="add-comment" onSubmit={handleSubmit}>
+      <form className='add-comment' onSubmit={handleSubmit}>
         <label>
           <span>Add new comment:</span>
           <textarea
@@ -10633,7 +10809,7 @@ export default function ProjectComments({ project }) {
             value={newComment}
           ></textarea>
         </label>
-        <button className="btn">Add Comment</button>
+        <button className='btn'>Add Comment</button>
       </form>
     </div>
   );
@@ -10661,15 +10837,15 @@ export default function ProjectSummary({ project }) {
 
   return (
     <div>
-      <div className="project-summary">
-        <h2 className="page-title">{project.name}</h2>
-        <p className="created-by">by {project.createdBy.displayName}</p>
-        <p className="due-date">
+      <div className='project-summary'>
+        <h2 className='page-title'>{project.name}</h2>
+        <p className='created-by'>by {project.createdBy.displayName}</p>
+        <p className='due-date'>
           Project due by {project.dueDate.toDate().toDateString()}
         </p>
-        <p className="details">{project.details}</p>
+        <p className='details'>{project.details}</p>
         <h4>Project is assigned to:</h4>
-        <div className="assigned-users">
+        <div className='assigned-users'>
           {project.assignedUsersList.map((user) => (
             <div key={user.id}>
               <Avatar src={user.photoURL} alt={user.displayName} />
@@ -10678,7 +10854,7 @@ export default function ProjectSummary({ project }) {
         </div>
       </div>
       {user.uid === project.createdBy.id && (
-        <button className="btn" onClick={handleClick}>
+        <button className='btn' onClick={handleClick}>
           Mark as Complete
         </button>
       )}
@@ -10734,8 +10910,8 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h2 className="page-title">Dashboard</h2>
-      {error && <p className="error">{error}</p>}
+      <h2 className='page-title'>Dashboard</h2>
+      {error && <p className='error'>{error}</p>}
       {documents && (
         <ProjectFilter
           currentFilter={currentFilter}
@@ -10765,7 +10941,7 @@ export default function ProjectFilter({ currentFilter, changeFilter }) {
   };
 
   return (
-    <div className="project-filter">
+    <div className='project-filter'>
       <nav>
         <p>Filter by:</p>
         {filterList.map((f) => (
@@ -10822,32 +10998,32 @@ export default function ProjectComments({ project }) {
   };
 
   return (
-    <div className="project-comments">
+    <div className='project-comments'>
       <h4>Project Comments</h4>
 
       <ul>
         {project.comments.length > 0 &&
           project.comments.map((comment) => (
             <li key={comment.id}>
-              <div className="comment-author">
+              <div className='comment-author'>
                 <Avatar src={comment.photoURL} alt={comment.displayName} />
                 <p>{comment.displayName}</p>
               </div>
-              <div className="comment-date">
+              <div className='comment-date'>
                 <p>
                   {formatDistanceToNow(comment.createdAt.toDate(), {
                     addSuffix: true,
                   })}
                 </p>
               </div>
-              <div className="comment-content">
+              <div className='comment-content'>
                 <p>{comment.content}</p>
               </div>
             </li>
           ))}
       </ul>
 
-      <form className="add-comment" onSubmit={handleSubmit}>
+      <form className='add-comment' onSubmit={handleSubmit}>
         <label>
           <span>Add new comment:</span>
           <textarea
@@ -10856,7 +11032,7 @@ export default function ProjectComments({ project }) {
             value={newComment}
           ></textarea>
         </label>
-        <button className="btn">Add Comment</button>
+        <button className='btn'>Add Comment</button>
       </form>
     </div>
   );
