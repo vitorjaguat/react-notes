@@ -5038,7 +5038,7 @@ There are several ways of doing that. We can simply add a button on the MainNavi
 
 Here we are going to do a more React Router specific way. We add a Form component wrapping that button on MainNavigation, with action='/logout' and method='post' (though it doesn't matter which method). Then export an action from new file /pages/Logout.js that removes item 'token' from localStorage and redirects the user to '/'. Then add a route with path: 'logout' and action: logoutAction, also import { action as logoutAction } from './pages/Logout' and that's it.
 
-````js
+```js
 //components/MainNavigation.js
 etc
 <li>
@@ -5066,6 +5066,202 @@ etc
 etc
 ```
 
+### Conditionally updating UI depending on auth status (using loaders)
+
+We could create an auth Context for that, but instead of that we will use loaders.
+
+Just add a loader to the root route '/', that loader will only get the token from the localStorage. This loader will run whenever the root is reached, this happens when we login and also when we logout, so the returned value from the loader will always be up-to-date. We can use the returned value from that loader in any component, we just have to define an id: 'root' to the root route, and then call useRouteLoaderData('root') to get the returned value from that route's loader.
+
+With this data, we can conditionally update our UI, depending on the user auth status.
+
+```js
+//util/auth.js
+export function getAuthToken() {
+  const token = localStorage.getItem('token');
+  return token;
+}
+
+export function tokenLoader() {
+  return getAuthToken();
+} //this will simply get the token from localStorage
+
+//App.js
+etc
+{
+    path: '/',
+    element: <RootLayout />,
+    errorElement: <ErrorPage />,
+    id: 'root', //add an id to be able to call useRouteLoaderData('root')
+    loader: tokenLoader, //add the loader
+    children: [ etc ]
+}
+
+//EventItem.js
+import { Link, useSubmit, useRouteLoaderData } from 'react-router-dom';
+
+import classes from './EventItem.module.css';
+
+function EventItem({ event }) {
+  const token = useRouteLoaderData('root'); //checking if there is a token
+  const submit = useSubmit();
+
+  function startDeleteHandler() {
+    const proceed = window.confirm('Are you sure?');
+
+    if (proceed) {
+      submit(null, { method: 'delete' });
+    }
+  }
+
+  return (
+    <article className={classes.event}>
+      <img src={event.image} alt={event.title} />
+      <h1>{event.title}</h1>
+      <time>{event.date}</time>
+      <p>{event.description}</p>
+      {token && (
+        <menu className={classes.actions}>
+          <Link to='edit'>Edit</Link>
+          <button onClick={startDeleteHandler}>Delete</button>
+        </menu>
+      )} //conditionally updating UI
+    </article>
+  );
+}
+
+export default EventItem;
+```
+
+### Protecting routes (using loaders!)
+
+We can protect our routes, and redirect the user if she's not logged in, using loaders. Loaders will be called before the user reaches the target element, so we can, inside the loader, check if the user has a token. If he hasn't, we simply redirect him to '/auth'; if he has, we return null and then he'll reach the target path. We can also return the token, so that we'll be able to use it inside that route by using useLoaderData. Instead of returning null, we could also return the token, then it would be available on that route if we use `useLoaderData()` inside of it.
+
+```js
+//util/auth.js
+import { redirect } from 'react-router-dom';
+
+export function getAuthToken() {
+  const token = localStorage.getItem('token');
+  return token;
+}
+
+export function tokenLoader() {
+  return getAuthToken();
+}
+
+export function checkAuthLoader() {
+  const token = getAuthToken();
+
+  if (!token) {
+    return redirect('/auth');
+  }
+  return null;
+}
+
+//App.js
+import { checkAuthLoader } from './util/auth';
+etc
+{
+  path: 'new',
+  element: <NewEventPage />,
+  action: manipulateEventAction,
+  loader: checkAuthLoader,
+},
+etc
+```
+
+### Setting and managing token's expiration
+
+To automatically logout users after a period of time (1h for example), we can set an expiration item in localStorage.
+
+1. In Authentication.js, we have the action that logs in/ signs up. There, we must also store an expiration time inside localStorage.
+2. In util/auth.js, we must create a helper function to get the expiration data, compare to now, and return the remaining duration of the token. We can also incorporate this function to getAuthToken, so that whenever we check if there is a token, we only return truthy if the token is still valid.
+3. In our Root.js component, which is a component that loads for every path (because all paths in this projects are children of '/'), we set a useEffect to verify the token validity. This useEffect also handles an 'EXPIRED' value for the token, which is returned if the duration of the token is less than 0, by programmatically triggering the action 'logout'.
+
+```js
+// Authentication.js
+etc;
+//manage the token
+const resData = await response.json();
+const token = resData.token;
+localStorage.setItem('token', token);
+//token's expiration date
+const expiration = new Date(); //now
+expiration.setHours(expiration.getHours() + 1); //now + 1h
+localStorage.setItem('expiration', expiration.toISOString());
+
+return redirect('/');
+etc;
+
+//util/auth.js
+etc;
+export function getTokenDuration() {
+  const storedExpirationDate = localStorage.getItem('expiration');
+  const expirationDate = new Date(storedExpirationDate); //create a date object from that string
+  const now = new Date(); //now
+  const duration = expirationDate.getTime() - now.getTime(); //converts the date to timestamp and substract now
+  //if the duration is a positive number, the token is still valid for that quantity of miliseconds
+  return duration;
+}
+
+export function getAuthToken() {
+  const token = localStorage.getItem('token');
+  const tokenDuration = getTokenDuration();
+
+  if (!token) {
+    return null;
+  }
+
+  if (tokenDuration < 0) {
+    return 'EXPIRED';
+  }
+
+  return token;
+}
+etc;
+
+//Root.js
+import { useEffect } from 'react';
+import { Outlet, useSubmit, useLoaderData } from 'react-router-dom';
+
+import MainNavigation from '../components/MainNavigation';
+import { getTokenDuration } from '../util/auth';
+
+function RootLayout() {
+  const token = useLoaderData(); //getting the token
+  const submit = useSubmit();
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    if (token === 'EXPIRED') {
+      submit(null, { action: '/logout', method: 'post' });
+      return;
+    } //handling token value 'EXPIRED'
+
+    const tokenDuration = getTokenDuration();
+
+    const timeout = setTimeout(() => {
+      submit(null, { action: '/logout', method: 'post' });
+    }, tokenDuration); //setting a timeout in case the user stays on the same page for a long time
+
+    return () => clearInterval(timeout);
+  }, [token, submit]);
+
+  return (
+    <>
+      <MainNavigation />
+      <main>
+        <Outlet />
+      </main>
+    </>
+  );
+}
+
+export default RootLayout;
+```
 
 ## React Context & Reducers
 
@@ -5092,7 +5288,7 @@ First we create a ThemeContext component in a new /context folder:
 import { createContext } from 'react';
 
 export const ThemeContext = createContext();
-````
+```
 
 Second, in index.js, we wrap our App component with this Context's Provider:
 
