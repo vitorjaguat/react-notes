@@ -4613,11 +4613,54 @@ const router = createBrowserRouter([
 etc;
 ```
 
+#### useFetcher(): sending an action to another route
+
+We can trigger the action defined for another route using the ` action` prop in the Form component. But this would transition the user to that route, redirecting his navigation, automatically.
+
+To avoid transitioning to another route when triggering that route's action from an 'outsider' route, we can use the `useFetcher` hook. This hook triggers the action behind the scenes, without transitioning the user to that action's route.
+
+`const fetcher = useFetcher()` has several built-in methods and components, eg, `fetcher.Form`, `fetcher.data` (to get the data returned by the action), `fetcher.state` (either 'idle', 'loading' or 'submitting', just like in useNavigation).
+
+```js
+// NewsletterSignup.js
+import { useEffect } from 'react';
+import { useFetcher } from 'react-router-dom';
+import classes from './NewsletterSignup.module.css';
+
+function NewsletterSignup() {
+  const fetcher = useFetcher();
+  const { data, state } = fetcher;
+
+  useEffect(() => {
+    if (state === 'idle' && data && data.message) {
+      window.alert(data.message);
+    }
+  }, [data, state]);
+
+  return (
+    <fetcher.Form
+      action='/newsletter'
+      method='post'
+      className={classes.newsletter}
+    >
+      <input
+        type='email'
+        placeholder='Sign up for newsletter...'
+        aria-label='Sign up for newsletter'
+      />
+      <button>Sign up</button>
+    </fetcher.Form>
+  );
+}
+
+export default NewsletterSignup;
+```
+
 ### useNavigation
 
 When the user clicks on a path that has a loader function, the page will be shown only after the loader function has completed and the components have been mounted. So, we no longer can have a isPending state to show a 'loading...' message while the data is being fetched.
 
-In order to reflect the current navigation state in the UI, we can use `useNavigation`. When we call this hook, it returns an object with the `state` property. The state property can have 3 values: 'iddle', 'loading' or 'submitting'. Now we can conditionally show some content if `navigation.state === 'loading'`. But this has to be rendered not in the page that will be "waiting", but in a component that is always visible, like the Root layout for example.
+In order to reflect the current navigation state in the UI, we can use `useNavigation`. When we call this hook, it returns an object with the `state` property. The state property can have 3 values: 'idle', 'loading' or 'submitting'. Now we can conditionally show some content if `navigation.state === 'loading'`. But this has to be rendered not in the page that will be "waiting", but in a component that is always visible, like the Root layout for example.
 
 ```js
 // Root.js
@@ -4638,6 +4681,391 @@ export default function Root() {
   );
 }
 ```
+
+### defer
+
+`defer` is a function imported from react-router-dom. It is used when using loader or action functions, and allows us to show some content of the page before this functions are compoleted.
+
+```js
+import { Suspense } from 'react';
+import { useLoaderData, json, defer, Await } from 'react-router-dom';
+
+import EventsList from '../components/EventsList';
+
+function EventsPage() {
+  const { events } = useLoaderData();
+
+  return (
+    <Suspense fallback={<p style={{ textAlign: 'center' }}>Loading...</p>}>
+      <Await resolve={events}>
+        {(loadedEvents) => <EventsList events={loadedEvents} />}
+      </Await>
+    </Suspense>
+  );
+}
+
+export default EventsPage;
+
+async function loadEvents() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    throw json({ message: 'Could not fetch events.' }, { status: 500 });
+  } else {
+    const resData = await response.json();
+    return resData.events;
+  }
+}
+
+export function loader() {
+  return defer({
+    events: loadEvents(),
+  });
+}
+```
+
+We can also use defer with 2 loaders, so that they begin to appear on the screen as soon as they are completed.
+
+Here, besides the EventItem component, we are also outputting the EventList component, and they have independent defer properties:
+
+```js
+//EventDetail.js
+import { Suspense } from 'react';
+import {
+  json,
+  useRouteLoaderData,
+  redirect,
+  defer,
+  Await,
+} from 'react-router-dom';
+import EventItem from '../components/EventItem';
+import EventsList from '../components/EventsList';
+
+export default function EventDetail() {
+  const { event, events } = useRouteLoaderData('event-detail');
+
+  return (
+    <>
+      <Suspense fallback={<p style={{ textAlign: 'center' }}>Loading...</p>}>
+        <Await resolve={event}>
+          {(loadedEvent) => <EventItem event={loadedEvent} />}
+        </Await>
+      </Suspense>
+      <Suspense fallback={<p style={{ textAlign: 'center' }}>Loading...</p>}>
+        <Await resolve={events}>
+          {(loadedEvents) => <EventsList events={loadedEvents} />}
+        </Await>
+      </Suspense>
+    </>
+  );
+}
+
+async function loadEvent(id) {
+  const response = await fetch('http://localhost:8080/events/' + id);
+
+  if (!response.ok) {
+    throw json(
+      { message: 'Could now fetch details for selected event.' },
+      { status: 500 }
+    );
+  } else {
+    const resData = await response.json();
+    return resData.event;
+  }
+}
+
+async function loadEvents() {
+  const response = await fetch('http://localhost:8080/events');
+
+  if (!response.ok) {
+    // return { isError: true, message: 'Could not fetch events.' };
+    throw json({ message: 'Could not fetch events.' }, { status: 500 });
+  } else {
+    const resData = await response.json();
+    return resData.events;
+  }
+}
+
+export async function loader({ request, params }) {
+  //request.url can access query parameters, for example;
+  const id = params.eventId;
+
+  return defer({
+    event: await loadEvent(id),
+    events: loadEvents(),
+  });
+}
+
+export async function action({ params, request }) {
+  const eventId = params.eventId;
+
+  const response = await fetch('http://localhost:8080/events' + eventId, {
+    // method: 'DELETE' // by hardcoding like this, you don't need to pass the method as an argument of useSubmit() (in EventItem.js)
+    method: request.method,
+  });
+
+  if (!response.ok) {
+    throw json({ message: 'Could not delete event.' }, { status: 500 });
+  }
+  return redirect('/events');
+}
+```
+
+## React Router 6.4 (2): authentication issues
+
+_repo react-max-21-auth-NEW, lecture 340 on_
+
+### usesearchParams: query strings
+
+Query strings (also called search params) are not declared on our routes definitions. Instead, they allow us to add information to our paths, that can be retrieved on the elements to change the content that will be output.
+
+`useSeachParams()` returns an array with 2 variables: `searchParams` and `setSearchParams`. It can be used just as an useState, with the difference that it will change the browser's url.
+
+For example, we can conditionally change the behavior of this Link, depending on the search params:
+
+```js
+import { Form, Link, useSearchParams } from 'react-router-dom';
+
+import classes from './AuthForm.module.css';
+
+function AuthForm() {
+  const [searchParams] = useSearchParams();
+  const isLogin = searchParams.get('mode') === 'login';
+
+  return (
+    <>
+      <Form method='post' className={classes.form}>
+        <h1>{isLogin ? 'Log in' : 'Create a new user'}</h1>
+        <p>
+          <label htmlFor='email'>Email</label>
+          <input id='email' type='email' name='email' required />
+        </p>
+        <p>
+          <label htmlFor='image'>Password</label>
+          <input id='password' type='password' name='password' required />
+        </p>
+        <div className={classes.actions}>
+          <Link to={`?mode=${isLogin ? 'signup' : 'login'}`}>
+            {isLogin ? 'Create new user' : 'Login'}
+          </Link>
+          <button>Save</button>
+        </div>
+      </Form>
+    </>
+  );
+}
+
+export default AuthForm;
+```
+
+### Sending a POST request (signup)
+
+1. Export an action function (can be exported from any file, here we're exporting from Authentication.js, which is the page that already has the element for the action's path).
+2. Import that action into App.js, give it an alias and define it as an action in the '/auth' route.
+
+Now, the action will be called when the Form is submitted. Form components automatically trigger the action of their own route. In he action function, the 'mode' (login or signup) will be extracted from the `request.url`. We create a `new URL` object from request.url, this object contains a property called `searchParams`, we can call `searchParams.get('mode')` to extract the ?mode= query string from that.
+
+```js
+//Authentication.js
+import { json, redirect } from 'react-router-dom';
+import AuthForm from '../components/AuthForm';
+
+function AuthenticationPage() {
+  return <AuthForm />;
+}
+
+export default AuthenticationPage;
+
+export async function action({ request }) {
+  //extracting query string to get the mode (this is important for THIS server):
+  const searchParams = new URL(request.url).searchParams;
+  const mode = searchParams.get('mode') || 'login';
+  console.log(new URL(request.url));
+
+  //handling situation where the user changed the query string ?mode=somethingElse:
+  if (mode !== 'login' && mode !== 'signup') {
+    throw json({ message: 'Unsupported mode.' }, { status: 422 });
+  }
+
+  const data = await request.formData();
+  const authData = {
+    email: data.get('email'),
+    password: data.get('password'),
+  };
+
+  const response = await fetch('http://localhost:8080/' + mode, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(authData),
+  });
+
+  //handling response errors:
+  if (response.status === 422 || response.status === 401) {
+    return response;
+  }
+  if (!response.ok) {
+    throw json({ message: 'Could not authenticate user.' }, { status: 500 });
+  }
+
+  //manage the token (soon)
+
+  return redirect('/');
+}
+
+//App.js
+etc etc
+import AuthenticationPage, {
+  action as authAction,
+} from './pages/Authentication';
+etc
+{
+  path: 'auth',
+  element: <AuthenticationPage />,
+  action: authAction,
+},
+etc etc
+```
+
+### Giving user feedback about authentication process (and outputting errors)
+
+We can use the useActionData hook to get the response of the action. Here, our action will only give a response if there was an error; otherwise it will simply redirect the user to '/'.
+
+To give feedback about the submission process, we will use useNavigation to conditionally disable the button and change its text from 'Save' to 'Submitting...' when navigation.state === 'submitting'.
+
+```js
+import {
+  Form,
+  Link,
+  useSearchParams,
+  useActionData,
+  useNavigation, //here
+} from 'react-router-dom';
+
+import classes from './AuthForm.module.css';
+
+function AuthForm() {
+  const data = useActionData(); //here
+  const navigation = useNavigation(); //here
+
+  const [searchParams] = useSearchParams();
+  const isLogin = searchParams.get('mode') === 'login';
+  const isSubmitting = navigation.state === 'submitting'; //here
+
+  return (
+    <>
+      <Form method='post' className={classes.form}>
+        <h1>{isLogin ? 'Log in' : 'Create a new user'}</h1>
+        {data && data.errors && (
+          <ul>
+            {Object.values(data.errors).map((err) => (
+              <li key={err}>{err}</li>
+            ))}
+          </ul>
+        )} //here
+        {data && data.message && <p>{data.message}</p>} //here
+        <p>
+          <label htmlFor='email'>Email</label>
+          <input id='email' type='email' name='email' required />
+        </p>
+        <p>
+          <label htmlFor='image'>Password</label>
+          <input id='password' type='password' name='password' required />
+        </p>
+        <div className={classes.actions}>
+          <Link to={`?mode=${isLogin ? 'signup' : 'login'}`}>
+            {isLogin ? 'Create new user' : 'Login'}
+          </Link>
+          <button disabled={isSubmitting}>
+            {isSubmitting ? 'Submitting...' : 'Save'}
+          </button> //here
+        </div>
+      </Form>
+    </>
+  );
+}
+
+export default AuthForm;
+```
+
+### Attaching Auth Tokens to outgoing requests
+
+In the action that sends POST request to login/signup, we can store the token property of the response object (returned by the .fetch function) in localStorage.
+
+Here, we created a helper function getAuthToken.js exported from /util/auth.js to get that token from the localStorage whenever it's necessary.
+
+Now, in every action that needs to add an 'Authorization' header to be completed (this depends on our server settings), we can get the token from localStorage and pass it.
+
+```js
+// EventDetail.js
+import { getAuthToken } from '../util/auth'; //here
+etc etc
+//this action deletes or updates the item:
+export async function action({ params, request }) {
+  const eventId = params.eventId;
+  const token = getAuthToken(); //getting the token from localStorage using our helper function
+
+  const response = await fetch('http://localhost:8080/events/' + eventId, {
+    method: request.method,
+    headers: {
+      Authorization: 'Bearer ' + token, //attaching the token in the headers
+    },
+  });
+
+  if (!response.ok) {
+    throw json(
+      { message: 'Could not delete event.' },
+      {
+        status: 500,
+      }
+    );
+  }
+  return redirect('/events');
+}
+
+// util/auth.js
+export function getAuthToken() {
+  const token = localStorage.getItem('token');
+  return token;
+}
+
+```
+
+### Implementing Logout
+
+There are several ways of doing that. We can simply add a button on the MainNavigation with an onClick prop, create a function clickHandler inside this component that remove item 'token' from the localStorage and redirect the user to '/'.
+
+Here we are going to do a more React Router specific way. We add a Form component wrapping that button on MainNavigation, with action='/logout' and method='post' (though it doesn't matter which method). Then export an action from new file /pages/Logout.js that removes item 'token' from localStorage and redirects the user to '/'. Then add a route with path: 'logout' and action: logoutAction, also import { action as logoutAction } from './pages/Logout' and that's it.
+
+````js
+//components/MainNavigation.js
+etc
+<li>
+  <Form action='logout' method='post'>
+    <button>Logout</button>
+  </Form>
+</li>
+etc
+
+//pages/Logout.js
+import { redirect } from 'react-router-dom';
+
+export function action() {
+  localStorage.removeItem('token');
+  return redirect('/');
+}
+
+//App.js
+import { action as logoutAction } from './pages/Logout';
+etc
+{
+  path: 'logout',
+  action: logoutAction,
+},
+etc
+```
+
 
 ## React Context & Reducers
 
@@ -4664,7 +5092,7 @@ First we create a ThemeContext component in a new /context folder:
 import { createContext } from 'react';
 
 export const ThemeContext = createContext();
-```
+````
 
 Second, in index.js, we wrap our App component with this Context's Provider:
 
