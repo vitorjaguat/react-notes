@@ -9173,7 +9173,12 @@ When not using Lazy Loading, once our app is loaded, all the pages and component
 
 Use the **lazy** function and the **Suspense** component (from 'react'), we can download some components on demand.
 
+In React-Router 6.4, we must remember to pass the `meta` object to the loader function whenever implementing lazy-loading to a dynamic path.
+
 Other tools for optimizing the building process and, after that, the production, are **React.memo()** and **useCallback** [here](#reactmemo-usecallback--usememo).
+
+EXAMPLE REACT-ROUTER 5
+_repo react-max-21-deploy_
 
 ```js
 import React, { Suspense } from 'react';
@@ -9220,6 +9225,66 @@ function App() {
       </Suspense>
     </Layout>
   );
+}
+
+export default App;
+```
+
+EXAMPLE REACT-ROUTER 6.4
+_repo react-max-22-deploy-NEW_
+
+```js
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+
+// import BlogPage, { loader as postsLoader } from './pages/Blog';
+import HomePage from './pages/Home';
+// import PostPage, { loader as postLoader } from './pages/Post';
+import RootLayout from './pages/Root';
+
+const BlogPage = lazy(() => import('./pages/Blog'));
+const PostPage = lazy(() => import('./pages/Post'));
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: 'posts',
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<p>Loading...</p>}>
+                <BlogPage />
+              </Suspense>
+            ),
+            loader: () =>
+              import('./pages/Blog').then((module) => module.loader()),
+          },
+          {
+            path: ':id',
+            element: (
+              <Suspense fallback={<p>Loading...</p>}>
+                <PostPage />
+              </Suspense>
+            ),
+            loader: (meta) =>
+              import('./pages/Post').then((module) => module.loader(meta)), //don't forget to pass the meta object with the params when implementing lazyloading in dynamic paths!
+          },
+        ],
+      },
+    ],
+  },
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
 }
 
 export default App;
