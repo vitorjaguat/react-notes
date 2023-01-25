@@ -9984,7 +9984,368 @@ To use the variable locally, I created a `.env` file and set `MY_ENVIRONMENT_VAR
 
 Also remember to add `.env` to `.gitignore`. Now we can push our code to GH as a public repo.
 
-## React Animations
+## React Animations: Framer Motion
+
+_repo framer-motion, tutorial (by Net Ninja)
+https://www.youtube.com/playlist?list=PL4cUxeGkcC9iHDnQfTHEVVceOEBsOf07i_
+
+### The motion component
+
+To begin using Framer Motion, `import { motion } from framer-motion`. Then, add `motion.` in front of the jsx element you want to animate.
+
+The example below will animate as soon as we enter the page:
+
+```js
+<motion.div
+  className='title'
+  initial={{
+    y: -250,
+  }}
+  animate={{
+    y: -10,
+  }}
+  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+  //delay: waiting-time until animation begins
+  //duration: self-explanatory (only used for type 'tween')
+  //type: 'spring' is the default (bounces a little bit),
+  //type: 'tween' is a more uniform movement;
+  //stiffness: 500 produces more bouncing in 'spring' type
+  //ease: set to 'easeIn', 'easeInOut' etc
+>
+  <h1>Pizza Joint</h1>
+</motion.div>
+```
+
+### Animate while hover
+
+Use the attribute `whileHover={{ property: value }}`.
+
+```js
+<motion.button
+  whileHover={{
+    scale: 1.1,
+    textShadow: '0px 0px 8px #fff',
+    boxShadow: '0px 0px 8px #fff',
+  }}
+>
+  Next
+</motion.button>
+```
+
+### Variants
+
+We can store our animation properties in an object, then inside the element tag declare `variants={objectName}`. We need also to declare `initial='propertyName'`, propertyName is the name of an onject inside the variants object.
+
+In a child-element that also uses variants, there's no need to declare initial and animate when it follows the same pattern as this element's parent, because framer-motion variants propagate to children (see below).
+
+```js
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: {
+    x: '100vw',
+    opacity: 0,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: 'spring',
+      delay: 0.7,
+    },
+  },
+};
+
+const nextVariants = {
+  hidden: {
+    x: '-100vw',
+  },
+  visible: {
+    x: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 150,
+    },
+  },
+};
+
+const Base = ({ addBase, pizza }) => {
+  const bases = ['Classic', 'Thin & Crispy', 'Thick Crust'];
+
+  return (
+    <motion.div
+      className='base container'
+      variants={containerVariants}
+      initial='hidden'
+      animate='visible'
+    >
+      <h3>Step 1: Choose Your Base</h3>
+      <ul>
+        {bases.map((base) => {
+          let spanClass = pizza.base === base ? 'active' : '';
+          return (
+            <motion.li
+              key={base}
+              onClick={() => addBase(base)}
+              whileHover={{ scale: 1.3, originX: 0, color: '#f8e112' }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
+              <span className={spanClass}>{base}</span>
+            </motion.li>
+          );
+        })}
+      </ul>
+
+      {pizza.base && (
+        <motion.div
+          className='next'
+          variants={nextVariants}
+          // initial='hidden'
+          // animate='visible'
+          //no need to declare initial and animate because it follows the same pattern as this element's parent,
+          //and framer-motion variants propagate to children
+        >
+          <Link to='/toppings'>
+            <motion.button
+              whileHover={{
+                scale: 1.1,
+                textShadow: '0px 0px 8px #fff',
+                boxShadow: '0px 0px 8px #fff',
+              }}
+            >
+              Next
+            </motion.button>
+          </Link>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
+
+export default Base;
+```
+
+### Orchestration properties
+
+When we animate parents and children elements, we can 'orchestrate' their movement using orchestration properties like `when: 'beforeChildren'` (parent will finish its motion before children starts), `mass`, `damping` (these both control the 'weight' of a spring-type animation, affecting its duration), `staggerChildren: 0.4` (creates a 'gap' between the motion of parent and children)
+
+```js
+const containerVariants = {
+  hidden: {
+    x: '100vw',
+    opacity: 0,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: 'spring',
+      mass: 0.4, //lower mass = spring lasts less
+      damping: 8, //lower dumping = spring lasts more
+      when: 'beforeChildren',
+      staggerChildren: 0.3, //gap between parent and children's motions
+    },
+  },
+};
+```
+
+### Keyframes
+
+To make more complex animation of a property, we can add an array with multiple values as its value.
+
+```js
+const buttonVariants = {
+  hover: {
+    scale: [1, 1.1, 1, 1.1, 1, 1.1, 1],
+    textShadow: '0px 0px 8px #fff',
+    boxShadow: '0px 0px 8px #fff',
+  },
+};
+```
+
+### yoyo property
+
+If we want to repeat a keyframe pattern multiple times in a same variant, we can add the `yoyo` property to the transition object and set its value to the number of times (keyframes) we want that to repeat. The value can also be set to `Infinity`.
+
+```js
+const buttonVariants = {
+  hover: {
+    scale: 1.1,
+    textShadow: '0px 0px 8px #fff',
+    boxShadow: '0px 0px 8px #fff',
+    transition: {
+      duration: 0.25,
+      yoyo: 10, //repeat 10 times (10 keyframes) the animation
+      //yoyo: Infinity //repeats indefinitely
+    },
+  },
+};
+```
+
+### The AnimatePresence component
+
+Up to now, we've seen how to animate an element when the page is loaded and when hover. To animate an element when it goes off the page, we:
+
+1. set a state and conditionally show this element depending on that state
+2. import { AnimatePresence, motion } from 'framer-motion'
+3. wrap the element (and its conditional) with AnimatePresence
+4. add motion. in front of the tag of the element to be animated
+5. add an `exit={{ property: value }}` to that element
+
+The AnimatePresence component accepts 2 attributes (props):
+
+- `exitBeforeEnter`: the next animation will only begin after the previous has finished. Can be left empty (true) or ='false'
+- `onExitComplete`: accepts a function as its value. The function will run after the exit animation finishes
+
+```js
+const [showTitle, setShowTitle] = useState(true);
+
+<AnimatePresence>
+  {showTitle && (
+    <motion.h2 exit={{ y: -1000 }}>Thank you for your order</motion.h2>
+  )}
+</AnimatePresence>;
+```
+
+### Animating Routes
+
+To animate whenever we reach a new route (for example, making the pages slowly disappear or run off the window), we will:
+
+1. in App.js (wherever we define our routes with Switch), import { AnimatePresence } from 'framer-motion'
+2. wrap the whole Switch component in AnimatePresence. Also add the `exitBeforeEnter` attribute to it to be sure that the nex route will show only after the previous is out.
+3. add `location={location} key={location.key}` attributes to the Switch tag
+4. add an exit attribute to the container of the page (where the exit transition will be applied). Alternatively, add an exit property to the variants object and set the exit attribute on the element to 'exit'.
+
+```js
+//App.js
+etc;
+const location = useLocation(); //this will change whenever the route changes
+etc;
+return (
+  <>
+    <Header />
+    <AnimatePresence exitBeforeEnter>
+      <Switch location={location} key={location.key}>
+        <Route path='/base'>
+          <Base addBase={addBase} pizza={pizza} />
+        </Route>
+        <Route path='/toppings'>
+          <Toppings addTopping={addTopping} pizza={pizza} />
+        </Route>
+        <Route path='/order'>
+          <Order pizza={pizza} />
+        </Route>
+        <Route path='/'>
+          <Home />
+        </Route>
+      </Switch>
+    </AnimatePresence>
+  </>
+);
+
+//Home.js
+etc;
+const containerVariants = {
+  hidden: {
+    opacity: 0,
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      delay: 1.5,
+      duration: 1.5,
+    },
+  },
+  exit: {
+    x: '-100vw',
+    transition: {
+      ease: 'easeInOut',
+    },
+  },
+};
+
+const Home = () => {
+  return (
+    <motion.div
+      className='home container'
+      variants={containerVariants}
+      initial='hidden'
+      animate='visible'
+      exit='exit'
+    >
+      <h2>Welcome to Pizza Joint</h2>
+      <Link to='/base'>
+        <motion.button variants={buttonVariants} whileHover='hover'>
+          Create Your Pizza
+        </motion.button>
+      </Link>
+    </motion.div>
+  );
+};
+
+export default Home;
+```
+
+### Showing a Modal
+
+To show a Modal conditionally, we can set the initial value of opacity to 0, then animating it to opacity 1.
+
+### Animating SVGs
+
+We can animate either a whole svg (just add motion.svg to the tag) or the svg's paths. We can make the svg path draw itself by animating the `pathLength` property, from 0 to 1.
+
+```js
+etc
+const svgVariants = {
+  hidden: { rotate: -180 },
+  visible: {
+    rotate: 0,
+    transition: { duration: 1 },
+  },
+};
+
+const pathVariants = {
+  hidden: {
+    opacity: 0,
+    pathLength: 0,
+  },
+  visible: {
+    opacity: 1,
+    pathLength: 1, //that's MAGIC!
+    transition: {
+      duration: 2,
+      ease: 'easeInOut',
+    },
+  },
+};
+etc
+<div className='logo'>
+  <motion.svg
+    className='pizza-svg'
+    xmlns='http://www.w3.org/2000/svg'
+    viewBox='0 0 100 100'
+    variants={svgVariants}
+    initial='hidden'
+    animate='visible'
+  >
+    <motion.path
+      fill='none'
+      d='M40 40 L80 40 C80 40 80 80 40 80 C40 80 0 80 0 40 C0 40 0 0 40 0Z'
+      variants={pathVariants}
+    />
+    <motion.path
+      fill='none'
+      d='M50 30 L50 -10 C50 -10 90 -10 90 30 Z'
+      variants={pathVariants}
+    />
+  </motion.svg>
+</div>
+etc
+```
+
+### Links
 
 Frame Motion (by Net Ninja)
 https://www.youtube.com/playlist?list=PL4cUxeGkcC9iHDnQfTHEVVceOEBsOf07i
@@ -9992,9 +10353,10 @@ https://www.youtube.com/playlist?list=PL4cUxeGkcC9iHDnQfTHEVVceOEBsOf07i
 React Spring (by Brad Traversy)
 https://www.youtube.com/watch?v=S8yn3-WpVV8&ab_channel=TraversyMedia
 
-```
-
-```
+Animation packeges alternatives:
+React-Motion
+React Move (influenced by D3.js transitions)
+React Router Transitions (only react-router-dom v5x)
 
 ## Links
 
