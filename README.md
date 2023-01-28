@@ -5310,7 +5310,7 @@ ReactDOM.render(
 ```
 
 Now the 'value' prop will be available in all components.
-But usually we don't want that global prop to be hard-coded, instad we want to be able to change it over time.
+But usually we don't want that global prop to be hard-coded, instead we want to be able to change it over time.
 In order to do that, we will create a new component inside of ThemeContext.js, that will return the ThemeContext.Provider component and its children. Inside of this newly created ThemeProvider component, we can add the logic that will mutate the desired global prop as we want:
 
 ```js
@@ -8473,6 +8473,13 @@ Disadvantages of React Context:
 - _reducer functions_ can manipulate the store. Reducer functions are functions that receive an input and _transform_ it into another thing.
 - components dispatch _actions_, that are forwarded to the reducer function, that spits out the new data into the central store
 
+Steps:
+
+1. Design the store
+2. Define the actions
+3. Create the resucers
+4. Set up the store (based on your reducer)
+
 ### Redux: basic syntax
 
 Similar to useReducer, Redux also takes a reducerFunction as parameter, and this reducerFunction also takes the state and an action as parameters:
@@ -9435,7 +9442,7 @@ This is how the routing works in a Next.js app.
 
 ### Dynamic pages (with parameters)
 
-To create dynamic pages, that serve like a template to render different content, we will name that file using square brackets: `pages/news/[newsId].js`. This file will be rendered whenever reaches a path like `our-domain.com/news/something`.
+To create a dynamic page, that act like a template to render different content, we will name that page file using square brackets: `pages/news/[newsId].js`. This file will be rendered whenever the user reaches a path like `our-domain.com/news/something`.
 
 To get the value of 'something', we will use a custom hook, which is built-in inside of `next/router`: `useRouter`.
 
@@ -10343,6 +10350,107 @@ etc
   </motion.svg>
 </div>
 etc
+```
+
+### Creating a Loader
+
+```js
+import React from 'react';
+import { motion } from 'framer-motion';
+
+const loaderVariants = {
+  animationOne: {
+    x: [-20, 20],
+    y: [0, -30],
+    transition: {
+      x: {
+        yoyo: Infinity,
+        duration: 0.5,
+      },
+      y: {
+        yoyo: Infinity,
+        duration: 0.25,
+        ease: 'easeOut',
+      },
+    },
+  },
+};
+
+const Loader = () => {
+  return (
+    <>
+      <motion.div
+        className='loader'
+        variants={loaderVariants}
+        animate='animationOne'
+      ></motion.div>
+    </>
+  );
+};
+
+export default Loader;
+```
+
+### Changing behavior with useCycle
+
+The Framer Motion hook `useCycle` has many uses, one of them is to toggle between 2 predefined animation behaviors. It is defined similar to useState.
+
+In this example, whenever the user clicks on the div, the bahavior of the loader animation will change.
+
+```js
+import React from 'react';
+import { motion, useCycle } from 'framer-motion';
+
+const loaderVariants = {
+  animationOne: {
+    x: [-20, 20],
+    y: [0, -30],
+    transition: {
+      x: {
+        yoyo: Infinity,
+        duration: 0.5,
+      },
+      y: {
+        yoyo: Infinity,
+        duration: 0.25,
+        ease: 'easeOut',
+      },
+    },
+  },
+  animationTwo: {
+    y: [0, -40],
+    x: 0,
+    transition: {
+      y: {
+        yoyo: Infinity,
+        duration: 0.25,
+        ease: 'easeOut',
+      },
+    },
+  },
+};
+
+const Loader = () => {
+  const [animation, cycleAnimation] = useCycle('animationOne', 'animationTwo');
+
+  return (
+    <>
+      <motion.div
+        className='loader'
+        variants={loaderVariants}
+        animate={animation}
+      ></motion.div>
+      <div
+        style={{ cursor: 'pointer', margin: '6rem', fontSize: '0.8rem' }}
+        onClick={() => cycleAnimation()}
+      >
+        play with the little ball instead
+      </div>
+    </>
+  );
+};
+
+export default Loader;
 ```
 
 ### Links
