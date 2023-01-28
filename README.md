@@ -9547,16 +9547,16 @@ Whenever we are creating a static website, the source code will appear without t
 
 However, in Next.js, we have two forms of pre-rendering:
 
-1. Static Site Generation (SSG): good for static websites
-2. Server-side Rendering
+1. Static Site Generation (SSG): good for static websites, or dynamic websites whose database won't change multiple times per second => here, the webpages are pre-rendered on the build process
+2. Server-side Rendering: good for webapps whose database change everytime (dynamic websites) => here, the pages are rendered by the srever every time there is a request for that page
 
 In a static website, we can configure the app to serve pages that are pre-rendered via static generation. We do that by exporting the async function `getStaticProps()` in our pages.
 
-The code that will run in that function (usually fetching data and handling this data) will only run during the `building process` of our pages, ie, this code won`t be stored in our client-side app.
+The code that will run in that function (usually fetching data and handling this data) will only run during the `building process` of our pages, ie, this code won't be stored in our client-side app.
 
 `getStaticProps()` must return an object that contains a props object. That props object will be the props of that particular page.
 
-Alternatively, a plain React app would use useEffect withou dependencies to fetch the data from a server. But this would result in an 'empty' source code, not good for search-engine purposes.
+Alternatively, a plain React app would use useEffect without dependencies to fetch the data from a server. But this would result in an 'empty' source code, not good for search-engine purposes.
 
 ```js
 export default function HomePage(props) {
@@ -9578,11 +9578,11 @@ export async function getStaticProps() {
 }
 ```
 
-**revalidate** property: without this property, the page is built as a SSG-page on the build process, but stays the same after that. If, for example, the API receives new POST requests, the website will remain outdated. The **revalidate** property, inside the object returned by `getStaticProps()`, solves this problem. The number set as its value is the period of time (in seconds) in which our page will be re-generated (inside the server), at least when this page receives new requests.
+**revalidate** property: without this property, the page is built as a SSG-page on the build process, and stays the same after that. If, for example, the API receives new POST requests, the website will remain outdated. The **revalidate** property, inside the object returned by `getStaticProps()`, solves this problem. The number set as its value is the period of time (in seconds) in which our page will be re-generated (inside the server), at least when this page receives new requests.
 
 #### getStaticPaths(): working with params for SSG data fetching
 
-When working with params (dynamic pages like \[itemId\].js), we can extract the requested param using the `context.params` property. In order to do that, we have to pass the context object to the getStaticProps() function:
+When working with params (in dynamic pages like \[itemId\].js), we can extract the requested param using the `context.params` property. In order to do that, we have to pass the context object to the getStaticProps() function:
 
 ```js
 export async function getStaticProps(context) {
@@ -9636,13 +9636,17 @@ export async function getStaticPaths() {
 }
 ```
 
+fallback false =>
+fallback: true =>
+fallback: 'blocking' =>
+
 ### getServerSideProps() and Server-side rendering (SSR)
 
 If we can't get satisfied updating our pre-rendered page only when building or every X seconds, we can then export `getServerSideProps()`. This function will only run on the server every time a request for that page is made.
 
 The disadvantage of getServerSideProps() is that it can take longer than getStaticProps(), as we have to wait for the server to generate the page everytime we load it.
 
-getServerSideProps() also offers access to the `req` and `res` objects, which come as properties of the `context` parameter. This can be useful for authentication middlewares to handle session data, etc.
+getServerSideProps() also offers access to the `req` and `res` objects, which come as properties of the `context` parameter. This can be useful for authentication middlewares, to handle session data, etc.
 
 ```js
 export async function getServerSideProps(context) {
@@ -9670,7 +9674,7 @@ Next.js offers the possibility to add code to create a complete API, inside of o
 1. Create an `api` folder inside of `pages` folder. All the code written here will not be served in the client-side, only in the server-side, thus it's possible to add credentials like api-keys here.
 2. Create a .js file with a name that describe what will happen there. Eg, 'new-meetup.js'.
 3. On the browser, set up a MongoDB Atlas cluster and click 'connect'.
-4. npm install the official MongoDB driver via Terminal: `npm i mongo`.
+4. npm install the official MongoDB driver via Terminal: `npm i mongodb`.
 5. Write the code in our /api/new-meetup.js file:
 
 ```js
@@ -9683,8 +9687,6 @@ async function handler(req, res) {
   if (req.method === 'POST') {
     const data = req.body; //getting the req.body, which will contain the form data (title, image, address, description)
 
-    const { title, image, address, description } = data;
-
     //handle errors would be good!
 
     const client = await MongoClient.connect(
@@ -9692,7 +9694,7 @@ async function handler(req, res) {
     ); //add username and password where needed; the name 'meetups-db' after 'mongodb.net/' is the name of our db, it'll be created on the fly as we use it.
     const db = client.db('meetups-db');
 
-    const meetupsCollection = db.collection('meetups'); //this is the name if your collection inside 'meetups-db' database.
+    const meetupsCollection = db.collection('meetups'); //this is the name if your collection inside 'meetups-db' database. it will be created on the fly if doesn't exist.
 
     const result = await meetupsCollection.insertOne(data); //inserting new document into the collection.
 
@@ -9990,6 +9992,10 @@ Then I referred to process.env.`MY_ENVIRONMENT_VARIABLE` in the MongoClient.conn
 To use the variable locally, I created a `.env` file and set `MY_ENVIRONMENT_VARIABLE='<the MongoDB connect string>'`. Restarted the dev server and it worked. Here you should use ''.
 
 Also remember to add `.env` to `.gitignore`. Now we can push our code to GH as a public repo.
+
+### MISSING POINTS:
+
+- authenticating using Next.js / MongoAtlas
 
 ## React Animations: Framer Motion
 
