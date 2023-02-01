@@ -9636,9 +9636,10 @@ export async function getStaticPaths() {
 }
 ```
 
-fallback false =>
-fallback: true =>
-fallback: 'blocking' =>
+When reaching dymanic path that isn't mapped in getStaticPaths:
+fallback: false => will show an error page
+fallback: true => will show an empty page, generate a complete page on the server-side, then show the complete page
+fallback: 'blocking' => won't show anything until server-side has generated a complete page, then it'll show it (generally the best choice)
 
 ### getServerSideProps() and Server-side rendering (SSR)
 
