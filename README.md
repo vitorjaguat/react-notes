@@ -9998,6 +9998,20 @@ Also remember to add `.env` to `.gitignore`. Now we can push our code to GH as a
 
 - authenticating using Next.js / MongoAtlas
 
+### SMALL BITS: Next.js
+
+#### Smooth scolling
+
+````js
+// globals.css
+html {
+  scroll-behavior: smooth;
+}
+
+// on any file that contains Link:
+<Link href='#something' scroll={false}>Something</Link>
+```
+
 ## React Animations: Framer Motion
 
 _repo framer-motion, tutorial (by Net Ninja)
@@ -10028,7 +10042,7 @@ The example below will animate as soon as we enter the page:
 >
   <h1>Pizza Joint</h1>
 </motion.div>
-```
+````
 
 ### Animate while hover
 
