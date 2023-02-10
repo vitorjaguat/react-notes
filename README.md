@@ -10000,7 +10000,7 @@ Also remember to add `.env` to `.gitignore`. Now we can push our code to GH as a
 
 ### SMALL BITS: Next.js
 
-#### Smooth scolling
+#### Smooth scrolling
 
 ````js
 // globals.css
@@ -10010,6 +10010,14 @@ html {
 
 // on any file that contains Link:
 <Link href='#something' scroll={false}>Something</Link>
+
+//on the components being linked (add id):
+export default function Projects() {
+  return (
+    <div id='projects' className='w-full'>
+    etc etc
+  )}
+
 ```
 
 ## React Animations: Framer Motion
